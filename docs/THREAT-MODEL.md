@@ -9,6 +9,19 @@ The list comes from reading the registry (`houseofstake/tla-contracts`, commit `
 name's wallet (`hos-wallet`) and NEAR Intents (`near/intents`). Line references are in
 `HOW-CONTROL-PASSES.md`.
 
+## Who can attack, and what they control
+
+| Actor | Controls | Wants |
+|:--|:--|:--|
+| Seller | The name until handover, any Intents keys and NFT programs they set up, their own accounts | The buyer's money and a way back into the name |
+| Buyer | Their payment until it reaches the escrow, the right to accept a changed report | The name without paying, or a free option on it |
+| Anyone else | Every public escrow method, at any time and in any order | To stall a sale, burn the escrow's funds or front-run a buyer |
+| ATTO's bot | The same public methods as anyone else, and nothing more | Nothing: it is assumed faulty or offline, never trusted |
+| House of Stake | The registry's authority account: lease updates, reclaims, a 5-minute revert | Trusted to run the registry as published (T17) |
+
+ATTO is secure if, for every sale, the only possible endings are: the buyer holds the name with
+no seller access left and the seller holds the price, or each holds what they started with.
+
 ## What the registry already does on every change of owner
 
 These hold for any transfer, with or without ATTO:
@@ -61,6 +74,15 @@ ATTO adds what the registry cannot see: connections the name made inside other p
 | T19 | Sell during a renewal | Renewal and sale touch different state. The renewal extends the lease whoever owns the name | `sale_mid_renewal` |
 | T20 | Use a held Intents key in the gap to add a new key, or to switch on "signed messages only" | `verify` reads the keys and the mode after clearing. Anything left reverses the sale. The seller gains nothing and the buyer is refunded | `t20_key_added_in_gap_reverses` |
 | T21 | Sign an Intents instruction before the sale and submit it after | Intents checks the signing key when the instruction runs. Once `clear` removed the key, it fails | `t21_presigned_intent_refused` |
+| T22 | Have a second listing or a second buyer pay for the same name | One open listing per name. `pay` takes exactly the price and only while the listing is open, so a second payer is refused | `t22_one_listing_per_name` |
+| T23 | Post a manifest that leaves the seller's keys off the list (buyer or anyone) | `verify` does not trust the manifest for keys: it reads every key Intents holds for the name and requires none | `t23_verify_ignores_short_manifest` |
+| T24 | Call `clear`, `verify`, `complete` or `reverse` early, twice, or out of order | Each method checks the listing state and a lock held while its cross-contract calls are in flight. A second call is refused | `t24_out_of_order_calls_refused` |
+| T25 | Stall the sale by keeping the bot from running | Every step is public. If nothing has verified 24 hours after handover, anyone can reverse | `t25_timeout_reverses` |
+| T26 | Collect the name's NEAR when a sale reverses | `reverse` points the payout account at the seller before sending the name back, so nothing is swept to the escrow | `t26_reverse_sweeps_nothing` |
+| T27 | Leave the name stuck in the escrow if the registry reclaims it mid-sale | `settle_lost` lets anyone show the escrow no longer owns the name; the buyer is then refunded in full | `t27_lost_name_refunds_buyer` |
+| T28 | Use an NFT program they wrote that reports "no approvals" while keeping a back door | `verify` can only read what an NFT program says. The report names each program, and programs ATTO has not seen before are rated Needs the seller | report |
+| T29 | Fill the escrow's storage with junk listings | `list` takes a storage deposit, returned to the seller when the listing ends | `t29_list_needs_deposit` |
+| T30 | Point the name's payout account at a third party before handover | The handover is an ordinary transfer, which repoints the payout account to the escrow | `t30_payout_repointed_on_handover` |
 
 ## Found while building
 
@@ -68,6 +90,16 @@ ATTO adds what the registry cannot see: connections the name made inside other p
   name cannot pay the one-yoctoNEAR fee that each Intents and NFT call needs. `clear` therefore
   takes a small deposit from whoever calls it and passes it to the name first. The buyer's payment
   is never used for this.
+
+## Trust assumptions
+
+- The registry, the name's wallet and NEAR Intents behave as their published code says. ATTO's
+  tests run against the registry built from source and the Intents code read from mainnet.
+- House of Stake's authority can revert a transfer within 5 minutes and can reclaim expired names.
+  ATTO does not remove that power; T13 and T27 cover what happens if it is used mid-sale.
+- Title Search and the history are off chain. What the escrow clears it checks on chain itself;
+  what it can only report (sub-accounts, DAO roles, unknown NFT programs) is shown to the buyer
+  before they pay.
 
 ## Out of scope, stated plainly
 
