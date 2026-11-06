@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  // The shared package ships raw TypeScript.
+  transpilePackages: ["@atto/shared"],
 };
 
 export default nextConfig;
