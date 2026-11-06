@@ -133,6 +133,7 @@ export function ingestOutcomes(
     }
   }
 }
+export const cursorSource = (rpc: Rpc) => `blocks:${rpc.network}:${rpc.accounts.registry}`;
 export async function followBlock(rpc: Rpc, store: HistoryStore, height: number) {
   const prior = store.cursor("blocks");
   const head = await rpc.call<{ header: { height: number } }>("block", { finality: "final" });

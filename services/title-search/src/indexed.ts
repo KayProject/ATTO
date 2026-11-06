@@ -33,10 +33,23 @@ async function fastnear(path: string, body?: Json): Promise<Json> {
   return object(await response.json());
 }
 
+/** The span of ownership history a report read in full. */
+export interface HistoryCoverage {
+  since: string;
+  through: string;
+  source: string;
+  block_height: number;
+}
+
 export async function indexed(
   name: string,
   rpc: Rpc,
-): Promise<{ sections: Sections; sources: string[]; nfts: { contract_id: string; token_id: string }[] }> {
+): Promise<{
+  sections: Sections;
+  sources: string[];
+  nfts: { contract_id: string; token_id: string }[];
+  coverage?: HistoryCoverage;
+}> {
   const sections: Sections = {
     nfts: unavailable("NFTs and approvals", COVERAGE),
     dao_roles: unavailable("DAO roles", COVERAGE),
@@ -57,7 +70,9 @@ export async function indexed(
   const collections = new Set<string>();
   const children = new Set<string>();
   const history: ReportSection["lines"] = [];
-  let tokenContracts = 0;let pinnedThrough:string|undefined;let pinnedHeight:number|undefined;
+  let tokenContracts = 0;
+  let pinnedThrough: string | undefined;
+  let pinnedHeight: number | undefined;
   try {
     const snapshot = await fastnear(`https://api.fastnear.com/v1/account/${encodeURIComponent(name)}/full`);
     for (const entry of array(snapshot.nfts)) collections.add(string(object(entry).contract_id));
@@ -70,8 +85,12 @@ export async function indexed(
   }
 
   try {
-    const head = await rpc.call<{ header: { height: number } }>("block", { finality: "final" });
-    const finalHeight = head.header.height;pinnedThrough=nsDate(head.header.timestamp_nanosec);pinnedHeight=finalHeight;
+    const head = await rpc.call<{ header: { height: number; timestamp_nanosec: string } }>("block", {
+      finality: "final",
+    });
+    const finalHeight = head.header.height;
+    pinnedThrough = nsDate(head.header.timestamp_nanosec);
+    pinnedHeight = finalHeight;
     if (!Number.isSafeInteger(finalHeight)) throw new Error("Finalized block height unavailable");
     const hashes: string[] = [];
     const seen = new Set<string>();
@@ -337,15 +356,13 @@ export async function indexed(
   sections.sub_accounts = {
     title: "Sub-accounts",
     status: issues.length ? "unavailable" : children.size ? "filled" : "none_found",
-    lines: [...children]
-      .sort()
-      .map((child) => ({
-        label: child,
-        detail:
-          "Successful account-creation receipt sent by this name. Its access keys do not rotate when this name is sold.",
-        rating: "NeedsSeller",
-        ask_seller: "Disclose who controls this account and resolve any continuing dependency.",
-      })),
+    lines: [...children].sort().map((child) => ({
+      label: child,
+      detail:
+        "Successful account-creation receipt sent by this name. Its access keys do not rotate when this name is sold.",
+      rating: "NeedsSeller",
+      ask_seller: "Disclose who controls this account and resolve any continuing dependency.",
+    })),
     note: common,
   };
   history.sort(
@@ -364,19 +381,22 @@ export async function indexed(
     sections.intents_keys = {
       title: "Intents signing keys",
       status: held.length ? "filled" : "none_found",
-      lines: held
-        .sort()
-        .map((key) => ({
-          label: key,
-          detail: keyDates.has(key)
-            ? `Successful account-authorized add_public_key observed at ${nsDate(keyDates.get(key)!.toString())}.`
-            : "The signing key is currently active. Its addition date is unknown; signed-intent additions may not use a direct add_public_key call.",
-          rating: "WillBeCleared",
-          data: keyDates.has(key) ? { observed_added_at: nsDate(keyDates.get(key)!.toString()) } : undefined,
-        })),
+      lines: held.sort().map((key) => ({
+        label: key,
+        detail: keyDates.has(key)
+          ? `Successful account-authorized add_public_key observed at ${nsDate(keyDates.get(key)!.toString())}.`
+          : "The signing key is currently active. Its addition date is unknown; signed-intent additions may not use a direct add_public_key call.",
+        rating: "WillBeCleared",
+        data: keyDates.has(key) ? { observed_added_at: nsDate(keyDates.get(key)!.toString()) } : undefined,
+      })),
       note: "Addition dates are receipt observations, not a claim about who currently controls a key.",
     };
   } catch {}
   nfts.sort((a, b) => a.contract_id.localeCompare(b.contract_id) || a.token_id.localeCompare(b.token_id));
-  return { sections, sources, nfts };
+  // The account history covers every transaction since the account was created, up to the pinned block.
+  const coverage =
+    sections.history.status !== "unavailable" && pinnedThrough && pinnedHeight !== undefined
+      ? { since: new Date(0).toISOString(), through: pinnedThrough, source: "fastnear", block_height: pinnedHeight }
+      : undefined;
+  return { sections, sources, nfts, coverage };
 }

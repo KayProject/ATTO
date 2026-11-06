@@ -65,11 +65,57 @@ export async function backfillRegistry(rpc: Rpc, store: HistoryStore) {
   };
 }
 
-export async function backfillName(rpc:Rpc,store:HistoryStore,input:string){
- const {validateName}=await import('../../title-search/src/rpc');const {indexed}=await import('../../title-search/src/indexed');
- const name=validateName(input),discovery=await indexed(name,rpc);if(!discovery.coverage||discovery.sections.history?.status==='unavailable')throw new Error('Exhaustive finalized ownership history could not be established for this name.');
- const kinds:Record<string,string>={nft_mint:'minted',nft_transfer:'transferred',nft_burn:'burned',sub_account_rented:'minted',sub_account_re_rented:'re_rented',sub_account_transferred:'transferred',sub_account_recovered:'transferred',sub_account_reclaimed:'reclaimed'};
- let previouslyOwned=false,events=0;
- for(const line of discovery.sections.history?.lines??[]){const data=line.data;if(!data)continue;let kind=kinds[String(data.event)];if(!kind)continue;if(kind==='minted'&&previouslyOwned)kind='re_rented';previouslyOwned=true;const block_time=String(data.block_time);if(!Number.isFinite(Date.parse(block_time)))throw new Error('Ownership event timestamp is missing.');store.append({id:`indexed:${String(data.transaction_hash)}:${String(data.event)}:${name}`,token_id:name,kind,from_owner:typeof data.old_owner_id==='string'?data.old_owner_id:typeof data.from==='string'?data.from:null,to_owner:typeof data.new_owner_id==='string'?data.new_owner_id:typeof data.owner_id==='string'?data.owner_id:typeof data.to==='string'?data.to:typeof data.owner==='string'?data.owner:null,block_height:Number(data.block_height),block_time,tx_hash:String(data.transaction_hash),details:{...data,network:rpc.network,coverage_source:discovery.coverage.source}});events++;}
- store.setCoverage(name,discovery.coverage.since,discovery.coverage.through,true,discovery.coverage.source);return {name,events,coverage:store.coverage(name)};
+export async function backfillName(rpc: Rpc, store: HistoryStore, input: string) {
+  const { validateName } = await import("../../title-search/src/rpc");
+  const { indexed } = await import("../../title-search/src/indexed");
+  const name = validateName(input),
+    discovery = await indexed(name, rpc);
+  if (!discovery.coverage || discovery.sections.history?.status === "unavailable")
+    throw new Error("Exhaustive finalized ownership history could not be established for this name.");
+  const kinds: Record<string, string> = {
+    nft_mint: "minted",
+    nft_transfer: "transferred",
+    nft_burn: "burned",
+    sub_account_rented: "minted",
+    sub_account_re_rented: "re_rented",
+    sub_account_transferred: "transferred",
+    sub_account_recovered: "transferred",
+    sub_account_reclaimed: "reclaimed",
+  };
+  let previouslyOwned = false,
+    events = 0;
+  for (const line of discovery.sections.history?.lines ?? []) {
+    const data = line.data;
+    if (!data) continue;
+    let kind = kinds[String(data.event)];
+    if (!kind) continue;
+    if (kind === "minted" && previouslyOwned) kind = "re_rented";
+    previouslyOwned = true;
+    const block_time = String(data.block_time);
+    if (!Number.isFinite(Date.parse(block_time))) throw new Error("Ownership event timestamp is missing.");
+    store.append({
+      id: `indexed:${String(data.transaction_hash)}:${String(data.event)}:${name}`,
+      token_id: name,
+      kind,
+      from_owner:
+        typeof data.old_owner_id === "string" ? data.old_owner_id : typeof data.from === "string" ? data.from : null,
+      to_owner:
+        typeof data.new_owner_id === "string"
+          ? data.new_owner_id
+          : typeof data.owner_id === "string"
+            ? data.owner_id
+            : typeof data.to === "string"
+              ? data.to
+              : typeof data.owner === "string"
+                ? data.owner
+                : null,
+      block_height: Number(data.block_height),
+      block_time,
+      tx_hash: String(data.transaction_hash),
+      details: { ...data, network: rpc.network, coverage_source: discovery.coverage.source },
+    });
+    events++;
+  }
+  store.setCoverage(name, discovery.coverage.since, discovery.coverage.through, true);
+  return { baseline_height: discovery.coverage.block_height, name, events, coverage: store.coverage(name) };
 }

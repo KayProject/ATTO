@@ -1,5 +1,5 @@
 import { Rpc } from "../../title-search/src/rpc";
-import { backfillRegistry,backfillName } from "./backfill";
+import { backfillRegistry, backfillName } from "./backfill";
 import { HistoryStore, followBlock } from "./index";
 const rpc = Rpc.fromEnv(),
   store = new HistoryStore(process.env.ATTO_DB_PATH ?? "../../workbench/atto.sqlite");

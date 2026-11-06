@@ -179,13 +179,11 @@ export async function direct(
       return {
         title: "Intents signing keys",
         status: keys.length ? "filled" : "none_found",
-        lines: keys
-          .sort()
-          .map((k) => ({
-            label: k,
-            detail: "Can sign Intents messages. Date added is unavailable without transaction history.",
-            rating: "WillBeCleared",
-          })),
+        lines: keys.sort().map((k) => ({
+          label: k,
+          detail: "Can sign Intents messages. Date added is unavailable without transaction history.",
+          rating: "WillBeCleared",
+        })),
       };
     }),
     read("intents_mode", "Intents authentication", async () => {
