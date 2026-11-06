@@ -1,0 +1,85 @@
+/* ATTO design tokens. The look comes from title deeds: security paper, bottle-green ink, notary violet. */
+:root {
+  color-scheme: light;
+
+  /* Colour */
+  --paper: #e9efe9;
+  --paper-raised: #f5f8f4;
+  --ink: #14302b;
+  --ink-soft: #4a635c;
+  --rule: #b7c7bd;
+  --rule-strong: #7f978c;
+  --notary: #4b3fa7;
+  --notary-ink: #ffffff;
+  --clean: #1c6b4a;
+  --cleared: #4b3fa7;
+  --seller: #a8321f;
+  --warn-bg: #f6e3dc;
+  --mock-bg: #14302b;
+  --mock-fg: #e9efe9;
+  --mock-field: #24443d;
+
+  /* Type: a 4:3 scale from a 17px base */
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-body: "Inter Variable", system-ui, sans-serif;
+  --font-machine: "JetBrains Mono", ui-monospace, monospace;
+  --text-sm: 0.8125rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.4167rem;
+  --text-xl: 1.8889rem;
+  --text-2xl: 2.5185rem;
+  --text-3xl: clamp(2.5rem, 7vw, 4.4769rem);
+
+  /* Space */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --page: 72rem;
+  --measure: 38rem;
+  --target: 44px;
+
+  /* Shape: paper has square corners; only controls are softened */
+  --radius-control: 3px;
+  --lift: 0 1px 0 var(--rule), 0 10px 24px -18px rgb(20 48 43 / 0.45);
+
+  /* Motion */
+  --quick: 140ms;
+  --cut: 700ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --paper: #10241f;
+    --paper-raised: #17302a;
+    --ink: #e6efe7;
+    --ink-soft: #a5bbb1;
+    --rule: #2f4b43;
+    --rule-strong: #5c786e;
+    --notary: #a99ff0;
+    --notary-ink: #17123f;
+    --clean: #6fcf9f;
+    --cleared: #b6adf5;
+    --seller: #f29a84;
+    --warn-bg: #3b211a;
+    --mock-bg: #e6efe7;
+    --mock-fg: #10241f;
+    --mock-field: #cfdcd2;
+    --lift: 0 1px 0 var(--rule);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --quick: 0ms;
+    --cut: 0ms;
+  }
+}
