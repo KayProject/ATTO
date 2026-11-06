@@ -11,6 +11,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 near-sdk = { workspace = true }
 atto-shared = { workspace = true }
+defuse-wallet = { git = "https://github.com/near/intents", rev = "6095765fbdf71bebb7e00dfdaca8c5040adc4fe2", default-features = false, features = ["json"] }
 
 [dev-dependencies]
 near-sdk = { workspace = true, features = ["unit-testing"] }

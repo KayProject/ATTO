@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["shared", "escrow", "keeper"]
+members = ["shared", "escrow", "keeper", "dev/driver"]
 
 [workspace.dependencies]
 near-sdk = { version = "=5.29.0" }

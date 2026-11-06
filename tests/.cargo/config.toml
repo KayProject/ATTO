@@ -1,0 +1,2 @@
+[env]
+NEAR_SANDBOX_BIN_PATH = { value = "target/deps/near-sandbox", relative = true }
