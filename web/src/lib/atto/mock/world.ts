@@ -22,6 +22,7 @@ import {
 } from "@atto/shared";
 import { changedAnswer } from "../check";
 import { formatDate, formatNear, parseNear } from "../format";
+import { NOT_OWNER } from "../types";
 import type {
   ChangedAnswer,
   HandOverResult,
@@ -429,7 +430,7 @@ export class World {
 
   private ownerOnly(caller: string, token_id: string): NameState {
     const n = this.name(token_id);
-    if (n.owner !== caller) refuse("Only the current owner can do this.");
+    if (n.owner !== caller) refuse(NOT_OWNER);
     return n;
   }
 

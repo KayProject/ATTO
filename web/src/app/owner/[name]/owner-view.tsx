@@ -6,6 +6,7 @@ import { useAction, useLoad, usePersona } from "@/components/providers";
 import { ReportProvenance, Tally } from "@/components/report";
 import { atto } from "@/lib/atto/client";
 import { formatDate, formatNear, parseNear } from "@/lib/atto/format";
+import { NOT_OWNER } from "@/lib/atto/types";
 
 function AmountForm({
   id,
@@ -49,19 +50,30 @@ function AmountForm({
 export function OwnerPageView({ params }: { params: Promise<{ name: string }> }) {
   const name = decodeURIComponent(use(params).name);
   const { account } = usePersona();
-  const { data: view, error: refused, loading } = useLoad(() => atto.getOwnerView(name), [name]);
+  const { data: view, error: loadError, loading } = useLoad(() => atto.getOwnerView(name), [name]);
   const { run, busy, error } = useAction();
   const [shareDraft, setShare] = useState<string | null>(null);
   const share = shareDraft ?? String((view?.reserve.share_bps ?? 0) / 100);
 
   if (loading) return <p className="frame soft">Checking who owns this name…</p>;
-  if (refused || !view) {
+  if (loadError === NOT_OWNER) {
     return (
       <div className="frame stack">
         <h1>This page is for the owner of {name}</h1>
         <p className="notice notice-bad">
           {account} doesn&apos;t own this name, so this page stays closed. Anyone can still read its{" "}
           <Link href={`/names/${name}`}>public report</Link>.
+        </p>
+      </div>
+    );
+  }
+  if (loadError || !view) {
+    return (
+      <div className="frame stack">
+        <h1>The owner page for {name} can&apos;t open</h1>
+        <p className="notice notice-bad">{loadError ?? "ATTO returned nothing for this name."}</p>
+        <p>
+          Anyone can still read its <Link href={`/names/${name}`}>public report</Link>.
         </p>
       </div>
     );
