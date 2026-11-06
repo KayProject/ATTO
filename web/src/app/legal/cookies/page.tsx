@@ -12,7 +12,7 @@ export default function CookiesPage() {
           <code>atto-consent</code> remembers that you&apos;ve seen the cookie notice.
         </li>
         <li>
-          <code>atto-persona</code> remembers who you&apos;re acting as in the mock demo. It goes away with the mock.
+          <code>atto-persona</code> remembers who you&apos;re acting as in the demo.
         </li>
       </ul>
       <p>Both live in your browser&apos;s local storage, and you can clear them at any time in your browser settings.</p>

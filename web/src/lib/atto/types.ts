@@ -1,5 +1,5 @@
 // The frontend's view of ATTO's data. Pages only use `AttoClient`, so moving from
-// the mock to the real services and contracts (J-01) means swapping one implementation.
+// the mock to the real services and contracts means swapping one implementation.
 import type { Listing, Rating, Report, Reserve } from "@atto/shared";
 
 export type HistoryKind =

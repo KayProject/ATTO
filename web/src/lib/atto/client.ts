@@ -1,4 +1,4 @@
-// The mock implementation of AttoClient. J-01 replaces this file's export.
+// The browser's AttoClient. The server answers from the mock or the local sandbox.
 import { PERSONAS, type PersonaKey } from "./mock/seeds";
 import type { AttoClient } from "./types";
 
@@ -40,10 +40,10 @@ export function subscribePersona(notify: () => void) {
 }
 
 async function call<T>(method: string, args: object = {}): Promise<T> {
-  const response = await fetch(`/api/mock/${method}`, {
+  const response = await fetch(`/api/atto/${method}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ as: PERSONAS[getPersona()].account, args }),
+    body: JSON.stringify({ persona: getPersona(), args }),
   });
   const body = (await response.json().catch(() => null)) as { result?: T; error?: string } | null;
   if (!response.ok) throw new Error(body?.error ?? `The request failed with status ${response.status}.`);
@@ -73,6 +73,9 @@ export const atto: AttoClient = {
   withdraw: (name, amount) => call("withdraw", { name, amount }),
   renew: (name) => call("renew", { name }),
 };
+
+/** The account each persona acts as on the current backend. */
+export const personaAccounts = () => call<Record<PersonaKey, string>>("accounts");
 
 /** Mock-only tools for the bar at the top of the page. */
 export const mockTools = {

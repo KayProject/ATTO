@@ -5,8 +5,8 @@ export default function DevelopersPage() {
     <div className="frame prose">
       <h1>Check a name before your users pay it</h1>
       <p>
-        Two public endpoints, with no key needed. They currently answer from mock data, and each response carries an{" "}
-        <code>x-atto-data: mock</code> header until the real history store is connected.
+        Two public endpoints, with no key needed. Each response carries an <code>x-atto-data</code> header naming its
+        source: <code>mock</code> for the demo data, <code>sandbox</code> for the ATTO contracts on a local test chain.
       </p>
 
       <h2>Has this name changed owner?</h2>

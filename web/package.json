@@ -11,7 +11,10 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@atto/bot": "workspace:^",
+    "@atto/follower": "workspace:^",
     "@atto/shared": "workspace:^",
+    "@atto/title-search": "workspace:^",
     "@fontsource-variable/fraunces": "^5.3.0",
     "@fontsource-variable/inter": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
@@ -26,7 +29,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@types/node": "^20.19.43",
+    "@types/node": "^22.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

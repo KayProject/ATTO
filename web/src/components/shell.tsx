@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { mockTools } from "@/lib/atto/client";
+import { BACKEND } from "@/lib/atto/backend";
 import { formatDateTime } from "@/lib/atto/format";
 import { PERSONAS, type PersonaKey } from "@/lib/atto/mock/seeds";
 import { usePersona } from "./providers";
 
 export function MockBar() {
-  const { persona, setPersona, refresh } = usePersona();
+  const { persona, accounts, setPersona, refresh } = usePersona();
   const router = useRouter();
   const [clock, setClock] = useState<string | null>(null);
   const select = useRef<HTMLSelectElement>(null);
@@ -31,29 +32,39 @@ export function MockBar() {
   }
 
   return (
-    <aside className="mockbar" aria-label="Mock data controls">
+    <aside className="mockbar" aria-label="Demo controls">
       <div className="frame mockbar-inner">
-        <p>
-          <strong>Mock data.</strong> No real names, money or wallets are involved.
-          {clock ? ` Mock time: ${formatDateTime(clock)}.` : ""}
-        </p>
+        {BACKEND === "sandbox" ? (
+          <p>
+            <strong>Local sandbox.</strong> Real ATTO contracts on a private test chain, signed with throwaway keys.
+          </p>
+        ) : (
+          <p>
+            <strong>Mock data.</strong> No real names, money or wallets are involved.
+            {clock ? ` Mock time: ${formatDateTime(clock)}.` : ""}
+          </p>
+        )}
         <div className="row">
           <label>
             Acting as
             <select ref={select} value={persona} onChange={(e) => setPersona(e.target.value as PersonaKey)}>
               {(Object.keys(PERSONAS) as PersonaKey[]).map((key) => (
                 <option key={key} value={key}>
-                  {PERSONAS[key].label}: {PERSONAS[key].account}
+                  {PERSONAS[key].label}: {accounts[key]}
                 </option>
               ))}
             </select>
           </label>
-          <button type="button" onClick={() => void advance(24)}>
-            Skip 24 hours
-          </button>
-          <button type="button" onClick={() => void reset()}>
-            Reset mock
-          </button>
+          {BACKEND === "mock" && (
+            <>
+              <button type="button" onClick={() => void advance(24)}>
+                Skip 24 hours
+              </button>
+              <button type="button" onClick={() => void reset()}>
+                Reset mock
+              </button>
+            </>
+          )}
         </div>
       </div>
     </aside>

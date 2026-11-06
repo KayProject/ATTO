@@ -62,7 +62,7 @@ export function PayView() {
       <div aria-live="polite" className="stack">
         {error ? <p className="notice notice-bad">{error}</p> : null}
         {outcome && answer === null ? (
-          <p className="notice">{outcome.name} isn&apos;t in the mock data, so ATTO can&apos;t say whether it changed owner.</p>
+          <p className="notice">ATTO has no history for {outcome.name}, so it can&apos;t say whether it changed owner.</p>
         ) : null}
         {outcome && answer?.changed ? (
           <div className="notice notice-bad stack">

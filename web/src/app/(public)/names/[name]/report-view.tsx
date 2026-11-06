@@ -26,7 +26,7 @@ export function ReportView({ params }: { params: Promise<{ name: string }> }) {
     return (
       <div className="frame stack">
         <h1>{name}</h1>
-        <p>This name isn&apos;t in the mock data, so there&apos;s no report for it. Real names will work once ATTO reads the registry.</p>
+        <p>There&apos;s no report for this name in the demo. Try one of the names on the home page.</p>
         <p>
           Try one of these:{" "}
           {samples.map((s, i) => (
