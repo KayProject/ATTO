@@ -1,0 +1,10 @@
+[package]
+name = "atto-collector"
+version = "0.1.0"
+edition = "2021"
+publish = false
+[lib]
+crate-type = ["cdylib", "rlib"]
+[dependencies]
+near-sdk = { workspace = true }
+defuse-wallet = { git = "https://github.com/near/intents", rev = "6095765fbdf71bebb7e00dfdaca8c5040adc4fe2", default-features = false, features = ["json"] }

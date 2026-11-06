@@ -235,11 +235,15 @@ seller        buyer        escrow               registry / name wallet        In
 
 ```
 Reserve per name {
+  name: AccountId
+  last_spent_seen: 0      compatibility field; never used for reserve accounting
   balance: NEAR amount
   enabled: bool
   share_bps: u16           e.g. 500 = 5%, used by the bot only
   puller: AccountId        who may run pull(), default the ATTO bot
-  last_spent_seen: u128    last spent_yocto read from the name's grant
+  collector: AccountId     keyless per-name collection account
+  ready: bool              collector creation completed
+  busy: bool               withdrawal or renewal in flight
   owed_by_registry: u128   renewal overpayments not yet collected
 }
 ```
@@ -250,18 +254,24 @@ Reserve per name {
 |:--|:--|
 | `configure(enabled, share_bps, puller)` (the name itself) | The caller must be the name's own account, which only its owner can make speak (through `w_execute_extension`). |
 | `top_up(name)` (anyone, attaches NEAR) | Adds to the name's reserve. |
-| `pull(name, amount)` (the name's puller) | Makes the name send `amount` NEAR to the Keeper under its spend grant, then calls `sync`. |
-| `sync(name)` (anyone) | Reads `hos_spend_grant(keeper)` on the name. Credits the reserve with `spent_yocto - last_spent_seen`, but only if the grant's receivers are exactly the Keeper. Handles a reset meter (grant revoked and re-made) by starting from zero. This is how a plain transfer, which carries no note, is matched to the right name: the name's own wallet keeps the count. |
-| `renew(name)` (anyone) | Reads the lease and the rent. Only inside 30 days of lease end and only if the reserve covers rent plus 0.5%. Calls `renew_sub_account` with that amount. In the callback re-reads the lease: if the end date moved, takes the amount from the reserve and books the 0.5% as owed by the registry; if not, leaves the reserve whole (the registry refunds the Keeper). |
-| `collect_refunds()` (anyone) | Calls `claim_refund()` on the registry. Money lands in a shared refund pool that tops up reserves which were over-charged. |
+| `prepare(name)` (anyone, exact 2.1 NEAR) | Validates the registry name and creates its keyless collector; wait for `ready` before installing its grant. |
+| `pull(name, amount)` (the name's puller) | Asks its collector to make the name send NEAR under the collector's spend grant. |
+| `sync(name)` (anyone) | Asks the collector to forward its actual received balance above its 2 NEAR storage float. The payable credit method accepts only that name's collector. Spending counters never create reserve credit. Retry after the wallet's detached transfer settles. |
+| `renew(name)` (anyone) | Reads the lease and the rent. Only inside 30 days of lease end and only if the reserve covers rent plus 0.5%. Calls `renew_sub_account` with that amount. The callback re-reads the lease and the registry's actual pending refund. It credits only the amount actually claimed, since the registry recalculates rent at execution time. One renewal runs at a time; generation and phase checks reject duplicate callbacks. Failed reads leave a retryable reconciliation phase. |
+| `collect_refunds()` (anyone) | Calls `claim_refund()` on the registry. Reads the exact pending amount for the serialized renewal, claims it and credits that name after a successful transfer receipt. |
 | `withdraw(amount)` (the name itself) | Sends `amount` from the name's reserve back to the name. |
 | views | `get_reserve(name)`, `due_soon(from, limit)` for the bot |
 
 **How an owner switches on share-of-earnings** (the website builds one request the owner signs):
-1. `w_execute_extension` on the name with `AddExtension { keeper }`.
-2. `hos_grant_spend(extension = keeper, receivers = [keeper], budget_yocto = one year's rent,
+0. `prepare(name)` with 2.1 NEAR, then wait until `get_reserve(name).ready`; obtain `collector`.
+1. `w_execute_extension` on the name with `AddExtension { account_id: collector }`.
+2. `hos_grant_spend(extension = collector, receivers = [collector], budget_yocto = one year's rent,
    tokens = [], items = [], expires_at = lease end)`.
 3. `configure(true, 500, bot)` on the Keeper, sent by the name.
+
+The collector retains 2 NEAR for code storage and call funding; Keeper retains 0.1 NEAR for records. Neither is withdrawable reserve. Collector IDs use a 24-character name hash; Keeper IDs must be at most 39 characters. Collectors have no keys or admin methods.
+
+The original counter-based `sync` is unsafe: the wallet increments counters before detached transfers settle and preserves counters when receivers change. A counter is not proof of receipt. Per-name collectors replace that design.
 
 **Why it is safe**: the wallet itself fences the grant (one receiver, capped budget, expiry); the
 Keeper only ever sends reserve money to the registry's renewal or back to the name; a sale wipes

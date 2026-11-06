@@ -124,6 +124,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
+name = "atto-collector"
+version = "0.1.0"
+dependencies = [
+ "defuse-wallet",
+ "near-sdk",
+]
+
+[[package]]
 name = "atto-driver"
 version = "0.1.0"
 dependencies = [
@@ -155,6 +163,13 @@ dependencies = [
  "hex",
  "near-sdk",
  "serde_json",
+]
+
+[[package]]
+name = "atto-test-nft"
+version = "0.1.0"
+dependencies = [
+ "near-sdk",
 ]
 
 [[package]]
