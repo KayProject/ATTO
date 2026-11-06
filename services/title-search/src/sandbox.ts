@@ -31,12 +31,12 @@ export async function fixtureReport(r: FixtureRuntime, rpc: Rpc, path: string, f
   const d = await direct(r.name, rpc);
   const sections = d.sections;
   sections.history = {
-    title: "Fixture provenance",
+    title: "Where this report comes from",
     status: "filled",
     lines: [
       {
-        label: "Bounded sandbox fixture",
-        detail: fixture.note ?? fixture.scope ?? "Known local deployment fixture. Not a general sandbox history index.",
+        label: "Local test setup",
+        detail: fixture.note ?? fixture.scope ?? "Local test setup with a known inventory.",
         rating: "Clean",
       },
     ],
@@ -48,7 +48,7 @@ export async function fixtureReport(r: FixtureRuntime, rpc: Rpc, path: string, f
       label: role,
       detail: "Disclosed by the local fixture.",
       rating: "NeedsSeller",
-      ask_seller: "Remove the role or explicitly disclose it to the buyer.",
+      ask_seller: "Leave the DAO, or tell the buyer the role stays.",
     })),
   };
   sections.sub_accounts = {
@@ -63,9 +63,9 @@ export async function fixtureReport(r: FixtureRuntime, rpc: Rpc, path: string, f
     const keys = await rpc.query<{ keys: unknown[] }>(child, "view_access_key_list");
     sections.sub_accounts.lines.push({
       label: child,
-      detail: `${keys.keys.length} access keys remain under separate control.`,
+      detail: `${keys.keys.length} access ${keys.keys.length === 1 ? "key" : "keys"}, held outside the name's wallet.`,
       rating: "NeedsSeller",
-      ask_seller: "Transfer control of this sub-account separately or accept it as excluded from the sale.",
+      ask_seller: "Hand over this sub-account's keys separately, or agree it stays out of the sale.",
     });
   }
   sections.nfts = { title: "NFTs and approvals", status: fixture.nfts?.length ? "filled" : "none_found", lines: [] };
@@ -87,7 +87,7 @@ export async function fixtureReport(r: FixtureRuntime, rpc: Rpc, path: string, f
     r.name,
     "sandbox",
     sections,
-    [`${r.rpcUrl} finalized RPC`, "Explicit local fixture inventory; not a public-network discovery guarantee."],
+    [`${r.rpcUrl} finalized RPC`, "Read from the local test setup's known inventory."],
     fixture.nfts ?? [],
     final,
   );

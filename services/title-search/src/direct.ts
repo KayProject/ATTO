@@ -54,7 +54,7 @@ export async function direct(
           label: "Registry lifecycle",
           detail: registered.lifecycle,
           rating: registered.lifecycle === "Active" ? "Clean" : "NeedsSeller",
-          ask_seller: "Restore an active registration before listing.",
+          ask_seller: "Bring the registration back to Active before listing.",
         },
       ],
       note: "The name wallet’s spare NEAR goes to the seller on handover. Payments arriving while escrow holds the name stay for the buyer.",
@@ -88,11 +88,11 @@ export async function direct(
             label: "Wallet state",
             detail: l.state,
             rating: l.state === "Active" ? "Clean" : "NeedsSeller",
-            ask_seller: "Restore an active wallet state before listing.",
+            ask_seller: "Bring the wallet back to Active before listing.",
           },
           {
             label: "Freeze state",
-            detail: JSON.stringify(l.frozen),
+            detail: typeof l.frozen === "string" ? l.frozen : JSON.stringify(l.frozen),
             rating: l.frozen === "Unfrozen" ? "Clean" : "NeedsSeller",
             ask_seller: "Unfreeze the name before listing.",
           },
@@ -100,10 +100,9 @@ export async function direct(
             label: "Resale permission",
             detail: resale === true ? "Allowed" : "Not allowed",
             rating: resale === true ? "Clean" : "NeedsSeller",
-            ask_seller: "The business ending must enable resale before this name can be sold.",
+            ask_seller: "The owner of this business ending has to turn on resale before the name can be sold.",
           },
         ],
-        note: `Frozen state: ${JSON.stringify(l.frozen)}`,
       };
     }),
     read("wallet", "Wallet NEAR", async () => {
@@ -147,7 +146,7 @@ export async function direct(
                 detail: `${balance} base units; wallet token balances are outside the accepted manifest.`,
                 rating: "NeedsSeller",
                 ask_seller:
-                  "Settle this wallet token balance separately before the name sale. ATTO does not verify wallet FT balance floors.",
+                  "Move these tokens out of the name before the sale, or agree on them separately. The escrow checks Intents balances and the listed NFTs, not wallet tokens.",
               }
             : clean(contract, `${balance} base units`),
         );
@@ -156,7 +155,7 @@ export async function direct(
         title: "Wallet NEAR and tokens",
         status: "filled",
         lines,
-        note: "Fungible tokens: registry allowlist plus FastNEAR snapshot discovery. Amounts are base units, without decimal conversion. Tokens outside these sources may be undiscovered.",
+        note: "Tokens found through the registry's token list and FastNEAR's account snapshot. Amounts are in each token's smallest unit.",
       };
     }),
     read("name_keys", "Name access keys", async () => {
@@ -168,7 +167,7 @@ export async function direct(
           label: k.public_key,
           detail: JSON.stringify(k.access_key),
           rating: "NeedsSeller",
-          ask_seller: "Resolve access keys on the name before listing it.",
+          ask_seller: "Remove every access key on the name before listing it.",
         })),
       };
     }),
@@ -181,7 +180,7 @@ export async function direct(
         status: keys.length ? "filled" : "none_found",
         lines: keys.sort().map((k) => ({
           label: k,
-          detail: "Can sign Intents messages. Date added is unavailable without transaction history.",
+          detail: "Can sign Intents messages for this name. The date it was added isn't known on this network.",
           rating: "WillBeCleared",
         })),
       };
@@ -199,11 +198,9 @@ export async function direct(
             label: enabled ? "Account calls enabled" : "Signed messages only",
             detail: enabled
               ? "The name can remove its Intents keys by direct call."
-              : "The escrow cannot remove keys by direct account calls.",
+              : "The name only accepts signed messages, so the escrow can't remove its keys.",
             rating: enabled ? "Clean" : "NeedsSeller",
-            ask_seller: enabled
-              ? undefined
-              : "Enable predecessor authentication using a signed intent before the sale.",
+            ask_seller: enabled ? undefined : "Sign an intent that turns direct calls back on before the sale.",
           },
         ],
       };

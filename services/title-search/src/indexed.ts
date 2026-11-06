@@ -18,7 +18,7 @@ const string = (value: unknown): string => {
 const message = (error: unknown) => (error instanceof Error ? error.message : "Discovery failed");
 const MAX_TRANSACTIONS = 2_000;
 const COVERAGE =
-  "Discovery relies on FastNEAR account indexing and standard contract interfaces. Programs absent from that index and custom storage may remain undiscovered.";
+  "Found through FastNEAR's account index and standard contract views. A contract that keeps its records in its own format won't show up here.";
 async function fastnear(path: string, body?: Json): Promise<Json> {
   const response = await fetch(path.startsWith("https:") ? path : `https://tx.main.fastnear.com/v0/${path}`, {
     method: body ? "POST" : "GET",
@@ -61,7 +61,7 @@ export async function indexed(
   if (rpc.network !== "mainnet") {
     for (const section of Object.values(sections))
       section.note =
-        "No complete receipt-history source is configured on this network. Seller disclosure alone cannot prove that the name is clear.";
+        "This network has no full transaction history to search, so this section can't be checked. The seller's word alone isn't enough to call it clear.";
     return { sections, sources, nfts };
   }
   const issues: string[] = [];
@@ -280,9 +280,7 @@ export async function indexed(
             nfts.push({ contract_id: collection, token_id: id });
             nftLines.push({
               label: `${collection} / ${id}`,
-              detail: approvals.length
-                ? `Approved: ${approvals.join(", ")}`
-                : "No approvals returned by this contract.",
+              detail: approvals.length ? `Approved: ${approvals.join(", ")}` : "No approvals.",
               rating: approvals.length ? "WillBeCleared" : "Clean",
             });
           }
@@ -326,16 +324,16 @@ export async function indexed(
                 label: `${contract} / ${string(role.name)}`,
                 detail: `Current DAO policy ${kind === "Everyone" ? "applies to every account" : "includes this name"}. Permissions: ${JSON.stringify(array(role.permissions))}.`,
                 rating: "NeedsSeller",
-                ask_seller: "Confirm whether this DAO role should remain attached to the name.",
+                ask_seller: "Ask the seller to leave this DAO, or agree that the role stays with the name.",
               });
           }
         } catch (error) {
           daoIssues.push(`${contract}: ${message(error)}.`);
           daoLines.push({
             label: contract,
-            detail: `DAO classification is unresolved. Successful calls: ${[...methods].sort().join(", ")}. A failed policy view does not prove there is no DAO role.`,
+            detail: `ATTO couldn't tell whether these contracts the name called are DAOs: ${[...methods].sort().join(", ")}. Ask the seller about any roles there.`,
             rating: "NeedsSeller",
-            ask_seller: "Disclose custom DAO memberships or provide the supported membership view for this contract.",
+            ask_seller: "This DAO uses its own role rules. Ask the seller what role the name holds there.",
           });
         }
       }),
@@ -345,23 +343,23 @@ export async function indexed(
     title: "NFTs and approvals",
     status: issues.length || nftIssues.length ? "unavailable" : nftLines.length ? "filled" : "none_found",
     lines: nftLines.sort((a, b) => a.label.localeCompare(b.label)),
-    note: `Checked ${collections.size} discovered collections. ${tokenContracts} fungible-token contracts were discovered; their balances are outside this manifest. ${common} ${nftIssues.join(" ")} A view-method failure does not prove that a contract holds no NFTs.`,
+    note: `Checked ${collections.size} NFT collections. ${tokenContracts} token contracts were found; wallet tokens aren't part of the sale checks. ${common} ${nftIssues.join(" ")}`,
   };
   sections.dao_roles = {
     title: "DAO roles",
     status: issues.length || daoIssues.length ? "unavailable" : daoLines.length ? "filled" : "none_found",
     lines: daoLines.sort((a, b) => a.label.localeCompare(b.label)),
-    note: `Checked ${calls.size} successfully called contracts for DAO policy. ${common} ${daoIssues.join(" ")} Custom role rules may require seller disclosure.`,
+    note: `Checked ${calls.size} contracts the name called for a DAO policy. ${common} ${daoIssues.join(" ")}`,
   };
   sections.sub_accounts = {
     title: "Sub-accounts",
     status: issues.length ? "unavailable" : children.size ? "filled" : "none_found",
     lines: [...children].sort().map((child) => ({
       label: child,
-      detail:
-        "Successful account-creation receipt sent by this name. Its access keys do not rotate when this name is sold.",
+      detail: "Created by this name. Its access keys stay with whoever holds them when the name is sold.",
       rating: "NeedsSeller",
-      ask_seller: "Disclose who controls this account and resolve any continuing dependency.",
+      ask_seller:
+        "Ask the seller who holds this account's keys, then hand them over or agree it stays out of the sale.",
     })),
     note: common,
   };
@@ -372,7 +370,7 @@ export async function indexed(
     title: "Ownership history",
     status: issues.length ? "unavailable" : history.length ? "filled" : "none_found",
     lines: history,
-    note: `Only successful events emitted by the configured registry are treated as registry history. Transfer requests and third-party logs are not proof of an owner change. ${common}`,
+    note: `Built from the registry's own successful events. Failed requests and logs from other contracts don't count. ${common}`,
   };
   try {
     const held = await rpc.view<string[]>(rpc.accounts.intents, "public_keys_of", { account_id: name });
@@ -384,12 +382,12 @@ export async function indexed(
       lines: held.sort().map((key) => ({
         label: key,
         detail: keyDates.has(key)
-          ? `Successful account-authorized add_public_key observed at ${nsDate(keyDates.get(key)!.toString())}.`
-          : "The signing key is currently active. Its addition date is unknown; signed-intent additions may not use a direct add_public_key call.",
+          ? `Added at ${nsDate(keyDates.get(key)!.toString())}.`
+          : "Active. The date it was added isn't in the transaction history, which happens when a key is added through a signed intent.",
         rating: "WillBeCleared",
         data: keyDates.has(key) ? { observed_added_at: nsDate(keyDates.get(key)!.toString()) } : undefined,
       })),
-      note: "Addition dates are receipt observations, not a claim about who currently controls a key.",
+      note: "Dates show when each key was added. Anyone who had a key then may still have it.",
     };
   } catch {}
   nfts.sort((a, b) => a.contract_id.localeCompare(b.contract_id) || a.token_id.localeCompare(b.token_id));

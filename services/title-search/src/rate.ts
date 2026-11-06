@@ -22,10 +22,13 @@ export function rate(
         title: key.replaceAll("_", " "),
         status: "unavailable",
         lines: [],
-        note: "This read is not available.",
+        note: "This section couldn't be read right now.",
       },
     ]),
   ) as Report["sections"];
+  // What to ask the seller only applies to a line the seller has to fix.
+  for (const section of Object.values(sections))
+    for (const line of section.lines) if (line.rating !== "NeedsSeller") delete line.ask_seller;
   const counts = { Clean: 0, WillBeCleared: 0, NeedsSeller: 0 };
   for (const section of Object.values(sections)) for (const line of section.lines) counts[line.rating]++;
   const manifest: Manifest = {
@@ -58,9 +61,9 @@ export function rate(
     clean_sale: {
       supported: !incomplete.length && !blocked,
       reason: incomplete.length
-        ? `Incomplete coverage: ${incomplete.join(", ")}.`
+        ? `Some sections couldn't be read: ${incomplete.join(", ")}.`
         : blocked
-          ? "The seller must resolve the blocking access or lease items first."
+          ? "The seller has to fix the lease or access items marked Needs the seller first."
           : undefined,
     },
     manifest,
