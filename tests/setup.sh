@@ -42,7 +42,7 @@ if [ ! -s "$DEPS/intents.wasm" ]; then
     | jq -er '.result.code_base64' | base64 -d > "$DEPS/intents.wasm"
 fi
 
-for c in escrow keeper dev/driver dev/test-nft; do
+for c in collector escrow keeper dev/driver dev/test-nft; do
   [ -d "../contracts/$c" ] || continue
   (cd "../contracts/$c" && cargo near build non-reproducible-wasm --no-abi >/dev/null)
 done

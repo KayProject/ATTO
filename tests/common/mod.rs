@@ -113,11 +113,16 @@ pub struct IntentsKey {
 
 impl IntentsKey {
     pub fn random() -> Self {
-        Self { key: SigningKey::generate(&mut rand::rngs::OsRng) }
+        Self {
+            key: SigningKey::generate(&mut rand::rngs::OsRng),
+        }
     }
 
     pub fn public_key(&self) -> String {
-        format!("ed25519:{}", bs58::encode(self.key.verifying_key().to_bytes()).into_string())
+        format!(
+            "ed25519:{}",
+            bs58::encode(self.key.verifying_key().to_bytes()).into_string()
+        )
     }
 }
 
@@ -138,9 +143,30 @@ pub async fn transfer_name(
 ) -> Result<ExecutionFinalResult> {
     Ok(owner
         .call(registry.id(), "nft_transfer")
-        .args_json(json!({ "receiver_id": to, "token_id": token_id, "approval_id": null, "memo": null }))
+        .args_json(
+            json!({ "receiver_id": to, "token_id": token_id, "approval_id": null, "memo": null }),
+        )
         .deposit(ONE_YOCTO)
         .max_gas()
         .transact()
         .await?)
+}
+
+pub mod sale;
+
+/// Seeds a pre-existing descendant with a seller-held key; this is sandbox state,
+/// not a claim that the current wallet exposes a create-account operation.
+pub async fn seed_descendant(fleet: &Fleet, name: &AccountId) -> Result<AccountId> {
+    let child: AccountId = format!("shop.{name}").parse()?;
+    fleet
+        .worker
+        .patch(&child)
+        .account(near_workspaces::AccountDetailsPatch::default().balance(NearToken::from_near(1)))
+        .access_key(
+            fleet.bob.secret_key().public_key(),
+            near_workspaces::AccessKey::full_access(),
+        )
+        .transact()
+        .await?;
+    Ok(child)
 }

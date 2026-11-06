@@ -1,4 +1,4 @@
-//! A-03: a contract can own a leased name and make it call NEAR Intents.
+//! A contract can own a leased name and make it call NEAR Intents.
 //! The escrow depends on this: it must remove the seller's Intents keys
 //! while it owns the name.
 
@@ -21,7 +21,11 @@ async fn a_contract_owner_can_add_and_remove_intents_keys_for_a_name() -> Result
     let label = "bakery";
     let name = rent(&fleet, &registry, &tla, label).await?;
     let token_id = name.to_string();
-    fleet.relay.transfer_near(&name, NearToken::from_near(1)).await?.into_result()?;
+    fleet
+        .relay
+        .transfer_near(&name, NearToken::from_near(1))
+        .await?
+        .into_result()?;
 
     // The seller, a person, registers a key for the name inside Intents.
     let seller_key = IntentsKey::random();
@@ -34,8 +38,14 @@ async fn a_contract_owner_can_add_and_remove_intents_keys_for_a_name() -> Result
     );
     let out = owner_executes(&fleet.bob, &name, Request::new().external([add]), 100).await?;
     assert_clean(&out, "seller adds intents key")?;
-    assert_eq!(intents_keys_of(&intents, &name).await?, vec![seller_key.public_key()]);
-    println!("seller key registered for {name}: {}", seller_key.public_key());
+    assert_eq!(
+        intents_keys_of(&intents, &name).await?,
+        vec![seller_key.public_key()]
+    );
+    println!(
+        "seller key registered for {name}: {}",
+        seller_key.public_key()
+    );
 
     // The name moves to the driver contract.
     let out = transfer_name(&fleet.bob, &registry, &token_id, driver.id()).await?;
@@ -48,7 +58,11 @@ async fn a_contract_owner_can_add_and_remove_intents_keys_for_a_name() -> Result
 
     // The handover swept the name's NEAR to the seller, so it cannot pay the
     // 1 yocto each Intents call needs. The new owner tops it up first.
-    fleet.relay.transfer_near(&name, NearToken::from_millinear(50)).await?.into_result()?;
+    fleet
+        .relay
+        .transfer_near(&name, NearToken::from_millinear(50))
+        .await?
+        .into_result()?;
 
     // The contract makes the name add a key of its own, then remove both.
     let own_key = IntentsKey::random();
@@ -88,9 +102,15 @@ async fn a_contract_owner_can_add_and_remove_intents_keys_for_a_name() -> Result
         .transact()
         .await?;
     assert_clean(&out, "contract removes keys through the name")?;
-    println!("gas burnt for removing 2 keys: {} Tgas", out.total_gas_burnt.as_tgas());
+    println!(
+        "gas burnt for removing 2 keys: {} Tgas",
+        out.total_gas_burnt.as_tgas()
+    );
 
-    assert!(intents_keys_of(&intents, &name).await?.is_empty(), "no keys may remain");
+    assert!(
+        intents_keys_of(&intents, &name).await?.is_empty(),
+        "no keys may remain"
+    );
     println!("PASS: contract-owned name removed every Intents key; keys now []");
     Ok(())
 }
