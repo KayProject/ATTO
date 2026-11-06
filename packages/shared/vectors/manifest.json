@@ -1,0 +1,73 @@
+{
+  "empty": {
+    "manifest": {
+      "token_id": "clean.pay",
+      "intents_keys": [],
+      "intents_floor": [],
+      "nfts": [],
+      "needs_seller": []
+    },
+    "borsh_hex": "09000000636c65616e2e70617900000000000000000000000000000000",
+    "fingerprint": "f1b3d7cafbc120f917e70b31157bea65726aa87734c88207b0fb92594892d92f"
+  },
+  "dirty": {
+    "manifest": {
+      "token_id": "bakery.food",
+      "intents_keys": [
+        "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
+      ],
+      "intents_floor": [
+        {
+          "token_id": "nep141:wrap.near",
+          "amount": "2500000000000000000000000"
+        }
+      ],
+      "nfts": [
+        {
+          "contract_id": "art.near",
+          "token_id": "17"
+        }
+      ],
+      "needs_seller": [
+        "sub-account shop.bakery.food has 1 access key"
+      ]
+    },
+    "borsh_hex": "0b00000062616b6572792e666f6f640100000034000000656432353531393a364538734363693962616479526b5862334a6f5270426a357038433654773431454c445a6f6969684b45747001000000100000006e65703134313a777261702e6e6561720000801252008545651102000000000001000000080000006172742e6e656172020000003137010000002d0000007375622d6163636f756e742073686f702e62616b6572792e666f6f6420686173203120616363657373206b6579",
+    "fingerprint": "ace2ca6351c2fe93145ec4489d062506a1518edad123540fed06c7ea26c28e5a"
+  },
+  "many": {
+    "manifest": {
+      "token_id": "near.pay",
+      "intents_keys": [
+        "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp",
+        "ed25519:DcA2MzgpJbrUATQLLceocVckhhAqrkingax4oJ9kZ847"
+      ],
+      "intents_floor": [
+        {
+          "token_id": "nep141:wrap.near",
+          "amount": "1"
+        },
+        {
+          "token_id": "nep141:usdc.near",
+          "amount": "340282366920938463463374607431768211455"
+        }
+      ],
+      "nfts": [
+        {
+          "contract_id": "art.near",
+          "token_id": "1"
+        },
+        {
+          "contract_id": "x.paras.near",
+          "token_id": "99:1"
+        }
+      ],
+      "needs_seller": [
+        "DAO role council in a.sputnik-dao.near",
+        ""
+      ]
+    },
+    "borsh_hex": "080000006e6561722e7061790200000034000000656432353531393a364538734363693962616479526b5862334a6f5270426a357038433654773431454c445a6f6969684b45747034000000656432353531393a446341324d7a67704a6272554154514c4c63656f6356636b68684171726b696e676178346f4a396b5a38343702000000100000006e65703134313a777261702e6e65617201000000000000000000000000000000100000006e65703134313a757364632e6e656172ffffffffffffffffffffffffffffffff02000000080000006172742e6e65617201000000310c000000782e70617261732e6e6561720400000039393a31020000002600000044414f20726f6c6520636f756e63696c20696e20612e737075746e696b2d64616f2e6e65617200000000",
+    "fingerprint": "151f936184b690fc5d2efec796f146d84b7727da8cb97e590a69033cd80a1eb8"
+  }
+}

@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+members = ["shared", "escrow", "keeper"]
+
+[workspace.dependencies]
+near-sdk = { version = "=5.29.0" }
+borsh = { version = "1", features = ["derive"] }
+atto-shared = { path = "shared" }
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+panic = "abort"
+overflow-checks = true
