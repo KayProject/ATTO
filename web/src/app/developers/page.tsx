@@ -1,3 +1,5 @@
+import { CHECK_API_PER_MINUTE } from "@/lib/atto/rate-limit";
+
 export const metadata = { title: "Developers" };
 
 export default function DevelopersPage() {
@@ -46,7 +48,9 @@ export default function DevelopersPage() {
 
       <h2>Errors</h2>
       <p>
-        An unknown name returns <code>404</code>. An invalid <code>days</code> returns <code>400</code>. Both have a body of{" "}
+        An unknown name returns <code>404</code>. An invalid <code>days</code> returns <code>400</code>. More than{" "}
+        {CHECK_API_PER_MINUTE} requests in a minute from one address returns <code>429</code>, with a{" "}
+        <code>retry-after</code> header giving the seconds to wait. All of them have a body of{" "}
         <code>{`{ "error": "..." }`}</code>.
       </p>
     </div>

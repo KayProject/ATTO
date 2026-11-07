@@ -1,11 +1,14 @@
 import { z } from "zod";
 import { BACKEND } from "@/lib/atto/backend";
+import { CHECK_API_PER_MINUTE, overLimit } from "@/lib/atto/rate-limit";
 import { reads } from "@/lib/atto/reads";
 
 const HEADERS = { "x-atto-data": BACKEND };
 const Days = z.coerce.number().int().min(1).max(3650).default(7);
 
 export async function GET(request: Request, { params }: { params: Promise<{ name: string }> }) {
+  const limited = overLimit(request, "check-api", CHECK_API_PER_MINUTE, HEADERS);
+  if (limited) return limited;
   const { name } = await params;
   const raw = new URL(request.url).searchParams.get("days");
   const days = Days.safeParse(raw ?? undefined);

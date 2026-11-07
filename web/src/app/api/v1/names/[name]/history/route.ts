@@ -1,9 +1,12 @@
 import { BACKEND } from "@/lib/atto/backend";
+import { CHECK_API_PER_MINUTE, overLimit } from "@/lib/atto/rate-limit";
 import { reads } from "@/lib/atto/reads";
 
 const HEADERS = { "x-atto-data": BACKEND };
 
 export async function GET(request: Request, { params }: { params: Promise<{ name: string }> }) {
+  const limited = overLimit(request, "check-api", CHECK_API_PER_MINUTE, HEADERS);
+  if (limited) return limited;
   const { name } = await params;
   const clean = decodeURIComponent(name).toLowerCase();
   if (!(await reads.getReport(clean)))

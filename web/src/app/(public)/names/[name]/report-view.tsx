@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { use } from "react";
 import { useLoad } from "@/components/providers";
-import { Plat, platLinks, ReportProvenance, ReportSections, Tally } from "@/components/report";
+import { Plat, platLinks, platUnread, ReportProvenance, ReportSections, Tally } from "@/components/report";
+import { LIVE_REPORTS } from "@/lib/atto/backend";
 import { atto } from "@/lib/atto/client";
 
 export function ReportView({ params }: { params: Promise<{ name: string }> }) {
@@ -26,9 +27,13 @@ export function ReportView({ params }: { params: Promise<{ name: string }> }) {
     return (
       <div className="frame stack">
         <h1>{name}</h1>
-        <p>There&apos;s no report for this name in the demo. Try one of the names on the home page.</p>
         <p>
-          Try one of these:{" "}
+          {LIVE_REPORTS
+            ? "ATTO found no rented name with this spelling on NEAR mainnet, or in the demo."
+            : "There's no report for this name in the demo."}
+        </p>
+        <p>
+          Try one of the demo names:{" "}
           {samples.map((s, i) => (
             <span key={s}>
               {i > 0 ? ", " : ""}
@@ -42,6 +47,7 @@ export function ReportView({ params }: { params: Promise<{ name: string }> }) {
 
   const mine = owned.find((o) => o.name === name);
   const sale = open.find((l) => l.token_id === name);
+  const live = report.network === "mainnet";
 
   return (
     <div className="frame stack-lg">
@@ -50,8 +56,17 @@ export function ReportView({ params }: { params: Promise<{ name: string }> }) {
           <h1 className="deed-title">{report.name}</h1>
           <Tally report={report} />
           <ReportProvenance report={report} />
-          {!report.clean_sale.supported ? (
+          {live ? (
+            <p className="notice">
+              This is a live report of a real name on NEAR mainnet. It&apos;s read-only: ATTO&apos;s escrow isn&apos;t on
+              mainnet yet, so this name can&apos;t be sold through ATTO.
+            </p>
+          ) : null}
+          {!live && !report.clean_sale.supported ? (
             <p className="notice notice-bad">Clean Sale isn&apos;t available for this name. {report.clean_sale.reason}</p>
+          ) : null}
+          {live && report.clean_sale.reason ? (
+            <p className="notice notice-bad">{report.clean_sale.reason} Reload in a minute to read them again.</p>
           ) : null}
           <div className="row">
             {sale ? (
@@ -69,12 +84,14 @@ export function ReportView({ params }: { params: Promise<{ name: string }> }) {
                 Open owner page
               </Link>
             ) : null}
-            <Link className="button" href={`/names/${name}/history`}>
-              See history
-            </Link>
+            {live ? null : (
+              <Link className="button" href={`/names/${name}/history`}>
+                See history
+              </Link>
+            )}
           </div>
         </div>
-        <Plat name={report.name} links={platLinks(report)} />
+        <Plat name={report.name} links={platLinks(report)} unread={platUnread(report)} />
       </section>
       <ReportSections report={report} />
     </div>

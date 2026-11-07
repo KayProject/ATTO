@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { LIVE_REPORTS } from "../backend";
+import { liveReport } from "../live";
 import { getWorld, resetWorld, runBot } from "./singleton";
 
 const yocto = z.string().regex(/^\d+$/);
@@ -16,7 +18,7 @@ const byId = z.object({ id });
 
 /** Everything the browser may ask the mock to do, with its arguments checked. */
 export const METHODS: Record<string, Handler> = {
-  getReport: method(byName, (_, a) => getWorld().getReport(a.name)),
+  getReport: method(byName, (_, a) => getWorld().getReport(a.name) ?? (LIVE_REPORTS ? liveReport(a.name) : null)),
   getHistory: method(byName, (_, a) => getWorld().getHistory(a.name)),
   changedOwner: method(z.object({ name: token, days: z.number().int().min(1).max(3650) }), (_, a) =>
     getWorld().changedOwner(a.name, a.days),

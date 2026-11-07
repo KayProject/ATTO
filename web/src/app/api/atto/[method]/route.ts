@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { BACKEND } from "@/lib/atto/backend";
+import { BACKEND, LIVE_REPORTS } from "@/lib/atto/backend";
 import { METHODS } from "@/lib/atto/mock/dispatch";
 import { PERSONAS, type PersonaKey } from "@/lib/atto/mock/seeds";
 import { Refusal } from "@/lib/atto/mock/world";
+import { LIVE_REPORTS_PER_MINUTE, overLimit } from "@/lib/atto/rate-limit";
 import { SANDBOX_METHODS, sandboxAccount } from "@/lib/atto/sandbox";
 
 const Body = z.object({
@@ -26,9 +27,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ met
   const table = BACKEND === "sandbox" ? SANDBOX_METHODS : METHODS;
   const handler = method === "accounts" ? () => accounts() : Object.hasOwn(table, method) ? table[method] : undefined;
   if (!handler) return Response.json({ error: "unknown method" }, { status: 404, headers: HEADERS });
+  // Each live report makes many calls to NEAR's public services.
+  if (LIVE_REPORTS && method === "getReport") {
+    const limited = overLimit(request, "live-reports", LIVE_REPORTS_PER_MINUTE, HEADERS);
+    if (limited) return limited;
+  }
   try {
     const { persona, args } = Body.parse(await request.json());
-    return Response.json({ result: (await handler(await accountFor(persona), args)) ?? null }, { headers: HEADERS });
+    const result = (await handler(await accountFor(persona), args)) ?? null;
+    const live = (result as { network?: string } | null)?.network === "mainnet";
+    return Response.json({ result }, { headers: live ? { "x-atto-data": "mainnet" } : HEADERS });
   } catch (error) {
     if (error instanceof Refusal) return Response.json({ error: error.message }, { status: 400, headers: HEADERS });
     if (error instanceof z.ZodError || error instanceof SyntaxError) {

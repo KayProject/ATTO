@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useLoad } from "@/components/providers";
-import { Plat, platLinks } from "@/components/report";
+import { Plat, platLinks, platUnread } from "@/components/report";
+import { LIVE_REPORTS } from "@/lib/atto/backend";
 import { atto } from "@/lib/atto/client";
 
 export function HomeView() {
@@ -51,10 +52,16 @@ export function HomeView() {
                   <Link href={`/names/${name}`}>{name}</Link>
                 </span>
               ))}
+              {LIVE_REPORTS ? (
+                <>
+                  {" "}
+                  from the demo, or a real rented name such as <Link href="/names/near.pay">near.pay</Link>
+                </>
+              ) : null}
             </p>
           ) : null}
         </div>
-        {example ? <Plat name={example.name} links={platLinks(example)} /> : null}
+        {example ? <Plat name={example.name} links={platLinks(example)} unread={platUnread(example)} /> : null}
       </section>
 
       <section className="stack">

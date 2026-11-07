@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { mockTools } from "@/lib/atto/client";
-import { BACKEND } from "@/lib/atto/backend";
+import { BACKEND, LIVE_REPORTS } from "@/lib/atto/backend";
 import { formatDateTime } from "@/lib/atto/format";
 import { PERSONAS, type PersonaKey } from "@/lib/atto/mock/seeds";
 import { usePersona } from "./providers";
@@ -40,7 +40,16 @@ export function MockBar() {
           </p>
         ) : (
           <p>
-            <strong>Mock data.</strong> No real names, money or wallets are involved.
+            {LIVE_REPORTS ? (
+              <>
+                <strong>Mock sales, live reports.</strong> Sales and owner pages use mock data, with no real money or
+                wallets. Searching a real rented name reads it from NEAR mainnet.
+              </>
+            ) : (
+              <>
+                <strong>Mock data.</strong> No real names, money or wallets are involved.
+              </>
+            )}
             {clock ? ` Mock time: ${formatDateTime(clock)}.` : ""}
           </p>
         )}
