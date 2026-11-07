@@ -16,13 +16,15 @@ export function Stamp({ rating }: { rating: Rating }) {
   );
 }
 
+const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/;
+
 function Line({ line }: { line: ReportLine }) {
   const isKey = line.label.startsWith("ed25519:") || line.label.startsWith("nep141:");
   return (
     <div className="report-line">
       <div className="report-line-text">
         <p className={`report-line-label ${isKey ? "machine" : ""}`}>{line.label}</p>
-        <p className="soft">{line.detail}</p>
+        <p className="soft">{TIMESTAMP.test(line.detail) ? formatDateTime(line.detail) : line.detail}</p>
         {line.ask_seller ? <p className="ask-seller small">{line.ask_seller}</p> : null}
       </div>
       <Stamp rating={line.rating} />
@@ -89,18 +91,29 @@ function shorten(label: string) {
   return label.startsWith("ed25519:") ? `Intents key ${label.slice(8, 14)}…` : label;
 }
 
+/** A line's place in the escrow's clearing order: Intents keys first, then NFTs. -1 if the escrow doesn't clear it. */
+function clearingIndex(report: Report, key: (typeof LINK_SECTIONS)[number], line: ReportLine): number {
+  const { intents_keys, nfts } = report.manifest;
+  if (key === "intents_keys") return intents_keys.indexOf(line.label);
+  if (key !== "nfts") return -1;
+  const label = line.data?.manifest_index;
+  if (typeof label === "number") return label;
+  const index = nfts.findIndex((nft) => `${nft.contract_id}/${nft.token_id}` === line.label);
+  return index < 0 ? -1 : intents_keys.length + index;
+}
+
 /** Everything in the report still tied to the name. Items before `clearedUpto` have been cut. */
 export function platLinks(report: Report, clearedUpto = 0): PlatLink[] {
   const links: PlatLink[] = [];
   for (const key of LINK_SECTIONS) {
     for (const line of report.sections[key].lines) {
       if (line.rating === "Clean") continue;
-      const index = line.data?.manifest_index;
+      const index = clearingIndex(report, key, line);
       links.push({
         id: `${key}:${line.label}`,
         label: shorten(line.label),
         rating: line.rating,
-        cut: typeof index === "number" && index < clearedUpto,
+        cut: index >= 0 && index < clearedUpto,
       });
     }
   }
@@ -126,7 +139,15 @@ export function Plat({ name, links, unread = false }: { name: string; links: Pla
   const height = rows * ROW;
   return (
     <figure className="plat" style={{ "--plat-row": `${ROW}px` } as React.CSSProperties}>
-      <div className="plat-parcel">{name}</div>
+      <div className="plat-parcel">
+        {name.split(".").map((part, i) => (
+          <span key={i}>
+            {i > 0 ? "." : ""}
+            <wbr />
+            {part}
+          </span>
+        ))}
+      </div>
       <svg
         className="plat-lines"
         viewBox={`0 0 100 ${height}`}
