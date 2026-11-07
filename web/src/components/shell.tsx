@@ -9,8 +9,16 @@ import { formatDateTime } from "@/lib/atto/format";
 import { PERSONAS, type PersonaKey } from "@/lib/atto/mock/seeds";
 import { usePersona } from "./providers";
 
+const subscribeNever = () => () => {};
+
 export function MockBar() {
   const { persona, accounts, setPersona, refresh } = usePersona();
+  // The sandbox's accounts can arrive while this bar is still hydrating, so it keeps the server's text until it's done.
+  const hydrated = useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false,
+  );
   const router = useRouter();
   const [clock, setClock] = useState<string | null>(null);
   const select = useRef<HTMLSelectElement>(null);
@@ -59,7 +67,7 @@ export function MockBar() {
             <select ref={select} value={persona} onChange={(e) => setPersona(e.target.value as PersonaKey)}>
               {(Object.keys(PERSONAS) as PersonaKey[]).map((key) => (
                 <option key={key} value={key}>
-                  {PERSONAS[key].label}: {accounts[key]}
+                  {PERSONAS[key].label}: {hydrated ? accounts[key] : PERSONAS[key].account}
                 </option>
               ))}
             </select>
