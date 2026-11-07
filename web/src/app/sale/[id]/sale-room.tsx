@@ -4,7 +4,7 @@ import Link from "next/link";
 import { use, useState } from "react";
 import { TERMINAL_STATES, type ListingState, type Report } from "@atto/shared";
 import { useAction, useLoad, usePersona } from "@/components/providers";
-import { Plat, platLinks, ReportProvenance, ReportSections, Tally } from "@/components/report";
+import { Plat, platLinks, platUnread, ReportProvenance, ReportSections, Tally } from "@/components/report";
 import { atto } from "@/lib/atto/client";
 import { formatNear, formatNsDateTime } from "@/lib/atto/format";
 import type { SaleView } from "@/lib/atto/types";
@@ -271,7 +271,7 @@ export function SaleRoom({ params }: { params: Promise<{ id: string }> }) {
             <p className="small soft">You aren&apos;t part of this sale, so you can only watch it.</p>
           ) : null}
         </div>
-        <Plat name={listing.token_id} links={platLinks(shown, listing.cleared_upto)} />
+        <Plat name={listing.token_id} links={platLinks(shown, listing.cleared_upto)} unread={platUnread(shown)} />
       </section>
 
       <section className="stack">

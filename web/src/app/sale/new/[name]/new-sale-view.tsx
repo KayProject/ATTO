@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { use, useState, type FormEvent } from "react";
 import { useAction, useLoad, usePersona } from "@/components/providers";
-import { Plat, platLinks, ReportSections, Tally } from "@/components/report";
+import { Plat, platLinks, platUnread, ReportSections, Tally } from "@/components/report";
 import { atto } from "@/lib/atto/client";
 import { parseNear } from "@/lib/atto/format";
 
@@ -66,7 +66,7 @@ export function NewSaleView({ params }: { params: Promise<{ name: string }> }) {
       <section className="stack">
         <h2>What the buyer will see</h2>
         <Tally report={report} />
-        <Plat name={report.name} links={platLinks(report)} />
+        <Plat name={report.name} links={platLinks(report)} unread={platUnread(report)} />
         <ReportSections report={report} />
       </section>
     </div>

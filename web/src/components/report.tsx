@@ -69,7 +69,7 @@ export function ReportSections({ report }: { report: Report }) {
 export function ReportProvenance({ report }: { report: Report }) {
   return (
     <p className="small soft">
-      Built {formatDateTime(report.built_at)} from {report.sources.join(", ")}. Report fingerprint{" "}
+      Built {formatDateTime(report.built_at)} from {report.sources.join(", ").replace(/\.$/, "")}. Report fingerprint{" "}
       <code title={report.fingerprint}>{shortHash(report.fingerprint)}</code>
       {report.final ? ". Final report, built after the seller lost control of the name." : "."}
     </p>
@@ -107,6 +107,12 @@ export function platLinks(report: Report, clearedUpto = 0): PlatLink[] {
   return links;
 }
 
+/** True if a section behind the drawing couldn't be read, so an empty drawing doesn't mean the name is free. */
+export function platUnread(report: Report): boolean {
+  return LINK_SECTIONS.some((key) => report.sections[key].status === "unavailable");
+}
+
+const UNREAD = "ATTO couldn't read everything tied to this name.";
 const ROW = 52;
 const LINE_COLOUR: Record<Rating, string> = {
   Clean: "var(--clean)",
@@ -115,8 +121,8 @@ const LINE_COLOUR: Record<Rating, string> = {
 };
 
 /** The name as a parcel, with a line to everything it's tied to. Lines visibly break when cut. */
-export function Plat({ name, links }: { name: string; links: PlatLink[] }) {
-  const rows = Math.max(links.length, 1);
+export function Plat({ name, links, unread = false }: { name: string; links: PlatLink[]; unread?: boolean }) {
+  const rows = Math.max(links.length + (unread ? 1 : 0), 1);
   const height = rows * ROW;
   return (
     <figure className="plat" style={{ "--plat-row": `${ROW}px` } as React.CSSProperties}>
@@ -141,12 +147,14 @@ export function Plat({ name, links }: { name: string; links: PlatLink[] }) {
             />
           );
         })}
-        {links.length === 0 ? (
+        {links.length === 0 && !unread ? (
           <path className="plat-line" d={`M0 ${height / 2} L 40 ${height / 2}`} stroke="var(--clean)" />
         ) : null}
       </svg>
       {links.length === 0 ? (
-        <figcaption className="plat-free">Nothing else is tied to this name.</figcaption>
+        <figcaption className={unread ? "plat-unread" : "plat-free"}>
+          {unread ? UNREAD : "ATTO found nothing else tied to this name."}
+        </figcaption>
       ) : (
         <ul className="plat-items">
           {links.map((link) => (
@@ -159,6 +167,7 @@ export function Plat({ name, links }: { name: string; links: PlatLink[] }) {
               </span>
             </li>
           ))}
+          {unread ? <li className="plat-item plat-unread">{UNREAD}</li> : null}
         </ul>
       )}
     </figure>
