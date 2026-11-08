@@ -1,30 +1,26 @@
-/* Preloader: a full-screen veil over the hero that the mark zooms through. Never takes clicks. */
-.scene-preloader {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  pointer-events: none;
-  animation: preloader-fallback 0s 2.4s forwards;
-}
-.scene-preloader[data-done] { display: none; }
+/* Preloader: a full-screen Paper veil where the logo writes itself; never takes clicks. */
+.scene-preloader,
 .preloader-cover {
   position: fixed;
   inset: 0;
   z-index: 80;
   pointer-events: none;
   background: var(--ground);
-  animation: preloader-fallback 0s 2.4s forwards;
+  animation: preloader-fallback 0s 4s forwards;
 }
-.preloader-veil { display: block; width: 100%; height: 100%; overflow: visible; }
-.preloader-ground { fill: var(--ground); }
-.preloader-stroke {
-  fill: none;
-  stroke: var(--sky);
-  stroke-width: 5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 1;
-  vector-effect: none;
+.scene-preloader { display: grid; place-items: center; overflow: hidden; }
+.scene-preloader[data-done] { display: none; }
+.preloader-logo { width: min(56vw, 420px); height: auto; color: var(--ground-ink); overflow: visible; }
+.preloader-burst {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 300vmax;
+  height: 300vmax;
+  margin: -150vmax 0 0 -150vmax;
+  border-radius: 50%;
+  background: var(--highlight);
+  transform: scale(0);
 }
 @keyframes preloader-fallback { to { visibility: hidden; } }
 @media (prefers-reduced-motion: reduce) {

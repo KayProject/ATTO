@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import "@fontsource-variable/inter";
+import "@fontsource-variable/fraunces";
+import "@fontsource-variable/dm-sans";
 import "@fontsource/jetbrains-mono/400.css";
 import "./globals.css";
 import { PersonaProvider } from "@/components/providers";

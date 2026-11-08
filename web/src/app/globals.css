@@ -8,6 +8,7 @@
 @import "../styles/tag.css";
 @import "../styles/cast.css";
 @import "../styles/scenes/home.css";
+@import "../styles/chrome.css";
 @theme inline {
   --color-background: var(--canvas);
   --color-foreground: var(--foreground);

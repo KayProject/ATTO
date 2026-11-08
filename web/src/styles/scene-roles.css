@@ -18,7 +18,11 @@
   --display-xl: clamp(3rem, 9vw, 9rem);
   --display-lg: clamp(2.5rem, 6.5vw, 6rem);
   --display-md: clamp(2rem, 4vw, 3.5rem);
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-body: "DM Sans Variable", system-ui, sans-serif;
 }
+body { font-family: var(--font-body); }
+h1, h2, h3 { font-family: var(--font-display); font-optical-sizing: auto; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --ground: #000000;

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="312" viewBox="0 0 760 312" role="img" aria-labelledby="title">
+  <title id="title">atto.</title>
+  <g fill="#000000">
+    <path id="a" d="M228 280V180A100 100 0 1 0 154 276.560861L154 222.708313A50 50 0 1 1 178 180V280Z"/>
+    <path id="t1" d="M250 55H300V222A8 8 0 0 0 308 230H320V280H308A58 58 0 0 1 250 222Z"/>
+    <path id="t2" d="M340 55H390V222A8 8 0 0 0 398 230H410V280H398A58 58 0 0 1 340 222Z"/>
+    <path id="o" fill-rule="evenodd" d="M630 180A100 100 0 1 1 430 180A100 100 0 1 1 630 180ZM580 180A50 50 0 1 0 480 180A50 50 0 1 0 580 180Z"/>
+    <path id="cut" d="M218 155H458V205H218Z"/>
+  </g>
+  <circle id="dot" cx="704" cy="255" r="25" fill="#F95C4B"/>
+</svg>

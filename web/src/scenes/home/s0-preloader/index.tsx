@@ -1,19 +1,13 @@
-// Home scene: the ATTO mark draws itself, then zooms through the camera to open onto the hero.
+// Home scene: the atto. logo writes itself, the cut draws through the t's, the dot drops, then the dot opens onto the page.
 "use client";
 import { useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { Logo } from "@/components/brand/logo";
 import { gsap } from "@/motion/gsap";
-import { DURATION } from "@/motion/tokens";
 import { useScene } from "@/motion/use-scene";
 import { markPreloaderDone, resetPreloader } from "./signal";
 
 const SEEN_KEY = "atto-preloaded";
-
-// The mark: a name tag with its punched hole, centred in a 1000 x 1000 box.
-const TAG = "M440 466 L466 438 H552 a12 12 0 0 1 12 12 V550 a12 12 0 0 1 -12 12 H466 L440 534 Z";
-const HOLE = { cx: 470, cy: 500, r: 9 };
-const CORD = "M461 500 C 440 500, 425 520, 404 512";
-
 const noSubscribe = () => () => {};
 
 function seenThisSession(): boolean {
@@ -43,19 +37,31 @@ export function PreloaderScene() {
       return;
     }
     resetPreloader();
-    const zoom = scope.querySelectorAll(".preloader-zoom");
-    const strokes = scope.querySelectorAll(".preloader-stroke");
+    const q = (s: string) => scope.querySelector<SVGElement>(s)!;
+    const letters = ["a", "t1", "t2", "o"].map((id) => q(`[data-stroke="${id}"]`));
+    const cut = q('[data-stroke="cut"]');
+    const dot = q("[data-dot]");
+    gsap.set([...letters, cut], { strokeDasharray: 1, strokeDashoffset: 1 });
+    gsap.set(dot, { y: -220, scale: 0.6, transformOrigin: "50% 50%", autoAlpha: 0 });
+
     const tl = gsap.timeline({
       onComplete: () => {
         scope.dataset.done = "";
         rememberSeen();
       },
     });
-    tl.fromTo(strokes, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.5, ease: "power2.inOut", stagger: 0.08 })
-      .set(scope.querySelector(".preloader-window"), { attr: { opacity: 1 } }, ">")
-      .add(markPreloaderDone, "<")
-      .to(zoom, { scale: 34, svgOrigin: "500 500", duration: DURATION.preloader - 0.62, ease: "power3.in" }, "<")
-      .to(scope, { autoAlpha: 0, duration: 0.12, ease: "none" }, "-=0.12");
+    tl.to(letters, { strokeDashoffset: 0, duration: 0.42, ease: "power2.inOut", stagger: 0.16 })
+      .to(cut, { strokeDashoffset: 0, duration: 0.38, ease: "power3.inOut" }, "+=0.05")
+      .to(dot, { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: "bounce.out" }, "-=0.05")
+      .add(markPreloaderDone, "+=0.15")
+      .to(scope.querySelector(".preloader-logo"), { autoAlpha: 0, duration: 0.18 }, "<")
+      .fromTo(
+        scope.querySelector(".preloader-burst"),
+        { scale: 0, autoAlpha: 1 },
+        { scale: 1, duration: 0.55, ease: "power3.in" },
+        "<",
+      )
+      .to(scope, { autoAlpha: 0, duration: 0.35, ease: "power1.out" });
     return () => {
       tl.kill();
     };
@@ -66,23 +72,8 @@ export function PreloaderScene() {
 
   return createPortal(
     <div ref={ref} className="scene-preloader" aria-hidden="true">
-      <svg className="preloader-veil" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <mask id="atto-preloader-mask" maskUnits="userSpaceOnUse" x="-20000" y="-20000" width="40000" height="40000">
-            <rect x="-20000" y="-20000" width="40000" height="40000" fill="white" />
-            <g className="preloader-zoom preloader-window" opacity="0">
-              <path d={TAG} fill="black" />
-              <circle {...HOLE} fill="white" />
-            </g>
-          </mask>
-        </defs>
-        <rect className="preloader-ground" x="-20000" y="-20000" width="40000" height="40000" mask="url(#atto-preloader-mask)" />
-        <g className="preloader-zoom">
-          <path className="preloader-stroke" d={TAG} pathLength={1} />
-          <circle className="preloader-stroke" {...HOLE} pathLength={1} />
-          <path className="preloader-stroke" d={CORD} pathLength={1} />
-        </g>
-      </svg>
+      <Logo className="preloader-logo" title="" />
+      <span className="preloader-burst" />
     </div>,
     document.body,
   );

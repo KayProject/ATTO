@@ -1,4 +1,5 @@
-// Home scene: the glass tag hero, which scrolls out onto the ground's horizon.
+// Home scene: the glass name tag tied to what the old owner still holds; scrolling cuts the cords ATTO can clear.
+/* eslint-disable @next/next/no-img-element -- pre-sized WebP layers that GSAP moves directly */
 "use client";
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -6,53 +7,20 @@ import { PillButton } from "@/components/ui/pill-button";
 import { gsap, ScrollTrigger, SplitText } from "@/motion/gsap";
 import { DURATION, EASE, SCRUB } from "@/motion/tokens";
 import { useScene } from "@/motion/use-scene";
-import { Character } from "@/scenes/tag/character";
-import { GlassTag } from "@/scenes/tag/glass-tag";
-import { cordsFor } from "@/scenes/tag/cords";
 import { DEMO_NAME, useDemoReport } from "../use-demo-report";
 import { whenPreloaderDone } from "../s0-preloader/signal";
 import { heroCounts } from "../s3-leftovers/leftovers";
+import { cordPaths, cutPoint, type CordState } from "./cords";
+import { BOX, CARDS, CORDS, OBJECTS, PEOPLE, TAG, pct } from "./layout";
 
-const GLYPHS = "ATOXNE#/+*<>";
-
-// Plays the headline as a character scramble that settles into the real words.
-function scramble(title: HTMLElement) {
-  const split = SplitText.create(title, { type: "words,chars" });
-  const chars = split.chars as HTMLElement[];
-  const finals = chars.map((char) => char.textContent ?? "");
-  // Hold each letter's width so stand-in glyphs never reflow the lines.
-  const widths = chars.map((char) => char.getBoundingClientRect().width);
-  chars.forEach((char, i) => {
-    char.style.display = "inline-block";
-    char.style.width = `${widths[i]}px`;
-    char.style.textAlign = "center";
-  });
-  const state = { p: 0 };
-  return gsap.to(state, {
-    p: 1,
-    duration: DURATION.reveal,
-    ease: "none",
-    onUpdate: () => {
-      chars.forEach((char, i) => {
-        const local = (state.p - (i / chars.length) * 0.7) / 0.3;
-        if (local <= 0) char.style.opacity = "0";
-        else if (local < 1) {
-          char.style.opacity = "1";
-          char.textContent = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
-        } else {
-          char.style.opacity = "1";
-          char.textContent = finals[i];
-        }
-      });
-    },
-    onComplete: () => split.revert(),
-    onInterrupt: () => split.revert(),
-  });
-}
+const IMG = (name: string) => `/glass/${name}.webp`;
 
 function plural(count: number, one: string, many: string) {
   return count === 1 ? one : many;
 }
+
+// Resting cord shapes, so the first paint and reduced motion show the full scene.
+const REST = CORDS.map((spec, i) => cordPaths(spec, { t: 0, cut: 0, fall: { x: 0, y: 0 } }, i * 1.7));
 
 export function HeroScene() {
   const ref = useRef<HTMLElement>(null);
@@ -68,78 +36,124 @@ export function HeroScene() {
   }
 
   useScene(ref, (scope) => {
-    const q = (selector: string) => scope.querySelector<HTMLElement>(selector);
-    const all = (selector: string) => scope.querySelectorAll<HTMLElement>(selector);
-    const stage = q(".hero-stage")!;
-    const title = q(".hero-title")!;
-    const tag = q(".hero-object")!;
-    const ground = q(".hero-ground")!;
+    const q = (s: string) => scope.querySelector<HTMLElement>(s)!;
+    const all = (s: string) => Array.from(scope.querySelectorAll<HTMLElement>(s));
+    const stage = q(".hero-stage");
+    const box = q(".gh-box");
+    const tag = q(".gh-tag");
 
-    // Entrance, played as the preloader opens.
+    // Cord state is animated as plain numbers; a ticker redraws the paths every frame.
+    const states: CordState[] = CORDS.map(() => ({ t: 0, cut: 0, fall: { x: 0, y: 0 } }));
+    const nears = CORDS.map((c) => all(`[data-cord="${c.id}"] .gh-cord-near`));
+    const fars = CORDS.map((c) => all(`[data-cord="${c.id}"] .gh-cord-far`));
+    const draw = (time: number) => {
+      CORDS.forEach((spec, i) => {
+        states[i].t = time;
+        const { near, far } = cordPaths(spec, states[i], i * 1.7);
+        nears[i].forEach((p) => p.setAttribute("d", near));
+        fars[i].forEach((p) => p.setAttribute("d", far));
+      });
+    };
+    gsap.ticker.add(draw);
+
+    // Entrance as the preloader opens.
+    const title = q(".hero-title");
+    const split = SplitText.create(title, { type: "lines,words", mask: "lines" });
     const intro = gsap.timeline({ paused: true });
     intro
-      .from(q(".hero-horizon"), { yPercent: 40, duration: DURATION.reveal, ease: EASE.enter }, 0)
-      .from(q(".hero-tag"), { autoAlpha: 0, y: 60, scale: 0.92, duration: DURATION.reveal, ease: EASE.enter }, 0.1)
-      .add(() => {
-        gsap.set(title, { autoAlpha: 1 });
-        scramble(title);
-      }, 0.15)
-      .from(all(".hero-rise"), { autoAlpha: 0, y: 24, duration: DURATION.enter, ease: EASE.enter, stagger: 0.12 }, 0.7)
-      .from(q(".crowd-left"), { x: -80, y: 120, autoAlpha: 0, duration: DURATION.reveal, ease: EASE.enter }, 0.35)
-      .from(all(".crowd-left .crowd-person"), { y: 40, duration: DURATION.enter, ease: EASE.settle, stagger: 0.1 }, 0.45)
-      .from(all(".hero-chip-slot"), { autoAlpha: 0, scale: 0.8, duration: DURATION.enter, ease: EASE.settle, stagger: 0.14 }, 0.9);
-    gsap.set(title, { autoAlpha: 0 });
+      .from(split.words, { yPercent: 110, duration: DURATION.reveal, ease: EASE.enter, stagger: 0.06 }, 0)
+      .from(tag, { y: 80, rotate: -24, autoAlpha: 0, duration: 1.2, ease: EASE.enter }, 0.1)
+      .from(all(".gh-object"), { y: -60, autoAlpha: 0, duration: 0.9, ease: EASE.settle, stagger: 0.1 }, 0.4)
+      .from(all(".gh-cord"), { autoAlpha: 0, duration: 0.6 }, 0.5)
+      .from(all(".gh-person"), { y: 60, autoAlpha: 0, duration: 0.9, ease: EASE.enter, stagger: 0.12 }, 0.5)
+      .from(all(".gh-card"), { scale: 0.85, autoAlpha: 0, duration: 0.7, ease: EASE.settle, stagger: 0.12 }, 0.9)
+      .from(all(".hero-rise"), { y: 24, autoAlpha: 0, duration: DURATION.enter, ease: EASE.enter, stagger: 0.1 }, 0.6);
     const stopWaiting = whenPreloaderDone(() => intro.play());
 
-    // Idle: chips drift slowly, each on its own beat.
-    all(".hero-chip").forEach((chip, i) => {
-      gsap.to(chip, { y: i % 2 ? 7 : -7, duration: 2.6 + i * 0.5, ease: "sine.inOut", yoyo: true, repeat: -1 });
-    });
+    // Idle life: the tag floats, objects bob, cards drift, light sweeps across the glass, the man tugs his cord.
+    gsap.to(tag, { y: -10, rotate: TAG.rotate! + 1.2, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: -1 });
+    all(".gh-object-bob").forEach((el, i) =>
+      gsap.to(el, { y: 8, rotate: i % 2 ? 4 : -4, duration: 2.4 + i * 0.4, ease: "sine.inOut", yoyo: true, repeat: -1 }),
+    );
+    all(".gh-card-drift").forEach((el, i) =>
+      gsap.to(el, { y: i % 2 ? 8 : -8, duration: 2.8 + i * 0.5, ease: "sine.inOut", yoyo: true, repeat: -1 }),
+    );
+    gsap.fromTo(
+      all(".gh-shine"),
+      { "--shine": "-40%" },
+      { "--shine": "140%", duration: 1.6, ease: "power2.inOut", repeat: -1, repeatDelay: 3.4, stagger: 0.25 },
+    );
+    gsap.to(q(".gh-man-arms"), { rotate: -3, duration: 1.4, ease: "sine.inOut", yoyo: true, repeat: -1 });
 
-    // Scroll out: headline shrinks and lifts, the ground rises and flattens, the tag settles on the horizon.
-    const horizonEnd = () => stage.clientHeight * 0.58;
-    const out = gsap.timeline({
+    // Pointer tilt: the glass leans toward the cursor.
+    const tiltX = gsap.quickTo(box, "rotateY", { duration: 0.8, ease: "power3.out" });
+    const tiltY = gsap.quickTo(box, "rotateX", { duration: 0.8, ease: "power3.out" });
+    const onMove = (e: PointerEvent) => {
+      const r = stage.getBoundingClientRect();
+      tiltX(((e.clientX - r.left) / r.width - 0.5) * 8);
+      tiltY(-((e.clientY - r.top) / r.height - 0.5) * 6);
+    };
+    stage.addEventListener("pointermove", onMove);
+
+    // Scroll: the scissors close on the key cord, the NFT cord snaps, the glass clears; then the scene hands over.
+    const fall = (i: number, target: HTMLElement, at: number, tl: gsap.core.Timeline) => {
+      tl.to(states[i], { cut: 1, duration: 0.12, ease: "power2.out" }, at)
+        .fromTo(q(`[data-flash="${CORDS[i].id}"]`), { scale: 0, autoAlpha: 1 }, { scale: 1.6, autoAlpha: 0, duration: 0.1 }, at)
+        .to(states[i].fall, { y: 420, x: 30, duration: 0.22, ease: "power2.in" }, at + 0.02)
+        .to(target, { y: 420, x: 30, rotate: 50, autoAlpha: 0, duration: 0.22, ease: "power2.in" }, at + 0.02);
+    };
+    const story = gsap.timeline({
       scrollTrigger: { trigger: scope, start: "top top", end: "bottom bottom", scrub: SCRUB, invalidateOnRefresh: true },
       defaults: { ease: EASE.scrub },
     });
-    out
-      .to(title, { scale: 0.6, y: () => (stage.clientWidth < 832 ? 0 : -stage.clientHeight * 0.1), duration: 1 }, 0)
-      .to(all(".hero-fade"), { autoAlpha: 0, y: -40, duration: 0.45 }, 0)
-      .to(q(".hero-chips"), { autoAlpha: 0, scale: 1.12, duration: 0.5 }, 0.05)
-      .to(ground, { y: () => horizonEnd() - ground.offsetTop, scaleX: 1.9, duration: 1 }, 0)
-      .to(all(".hero-crowd-ride"), { y: () => horizonEnd() - ground.offsetTop - stage.clientHeight * 0.03, duration: 1 }, 0)
-      .fromTo(q(".crowd-right"), { x: () => stage.clientWidth * 0.45 }, { x: 0, duration: 0.7 }, 0.25)
-      .to(
-        tag,
-        {
-          scale: 0.72,
-          x: () => (stage.clientWidth / 2 - (tag.offsetLeft + tag.offsetWidth / 2)) * 0.8,
-          y: () => horizonEnd() - (tag.offsetTop + tag.offsetHeight / 2) - tag.offsetHeight * 0.3,
-          duration: 1,
-        },
-        0,
-      );
+    story
+      .fromTo(q(".gh-woman-arm"), { rotate: -18 }, { rotate: 0, duration: 0.16 }, 0.06)
+      .to(q(".gh-woman-arm"), { rotate: 4, duration: 0.04 }, 0.22);
+    fall(0, q('[data-object="key"]'), 0.24, story);
+    fall(1, q('[data-object="frame"]'), 0.36, story);
+    story
+      .to(q(".gh-tag-clean"), { autoAlpha: 1, duration: 0.14 }, 0.44)
+      .to(all('[data-card="keys"] .gh-card-before, [data-card="nfts"] .gh-card-before'), { autoAlpha: 0, y: -8, duration: 0.06 }, 0.3)
+      .fromTo(all(".gh-card-after"), { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: 0.06 }, 0.34)
+      .to(q('[data-card="seller"]'), { scale: 1.06, duration: 0.06, yoyo: true, repeat: 1 }, 0.5)
+      .to(title, { scale: 0.62, y: () => -stage.clientHeight * 0.08, duration: 0.3 }, 0.66)
+      .to(all(".hero-fade"), { autoAlpha: 0, y: -30, duration: 0.18 }, 0.66)
+      .to(q(".hero-ground"), { yPercent: -62, scaleX: 1.6, duration: 0.34 }, 0.66)
+      .to(box, { y: () => -stage.clientHeight * 0.18, scale: 0.86, duration: 0.34 }, 0.66);
     ScrollTrigger.refresh();
 
     return () => {
+      gsap.ticker.remove(draw);
+      stage.removeEventListener("pointermove", onMove);
       stopWaiting();
       intro.kill();
+      split.revert();
     };
   });
+
+  const card = (key: "keys" | "nfts" | "seller", before: React.ReactNode, after?: React.ReactNode) => (
+    <div className="gh-card" data-card={key} style={{ left: `${(CARDS[key].x / BOX.w) * 100}%`, top: `${(CARDS[key].y / BOX.h) * 100}%` }}>
+      <div className="gh-card-drift">
+        <div className="gh-card-glass">
+          <span className="gh-card-before">{before}</span>
+          {after ? <span className="gh-card-after">{after}</span> : null}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <section ref={ref} className="scene scene-hero" aria-labelledby="hero-title">
       <div className="hero-stage">
-        <div className="hero-horizon" aria-hidden="true">
-          <div className="hero-ground" />
-        </div>
+        <div className="hero-plate" aria-hidden="true" />
+        <div className="hero-ground" aria-hidden="true" />
 
         <div className="hero-copy">
           <h1 id="hero-title" className="hero-title">
             What still holds this name?
           </h1>
           <div className="hero-fade">
-            <p className="hero-sub hero-rise">Names keep their old owner&apos;s keys.</p>
+            <p className="hero-sub hero-rise">Names keep their old owner&apos;s keys. ATTO finds them.</p>
             <form role="search" className="hero-search hero-rise" onSubmit={submit}>
               <label className="sr-only" htmlFor="hero-name">
                 NEAR name
@@ -154,60 +168,101 @@ export function HeroScene() {
                 onChange={(e) => setQuery(e.target.value)}
               />
               <PillButton type="submit" beckon disabled={!query.trim()}>
-                Search
+                Search a name
               </PillButton>
             </form>
           </div>
         </div>
 
-        <div className="hero-object">
-          <div className="hero-tag">
-            {report ? (
-              <GlassTag name={report.name} cords={cordsFor(report)} size="hero" />
-            ) : (
-              <div className="hero-tag-wait">{error ? "The example report didn't load." : DEMO_NAME}</div>
+        <div className="gh-wrap">
+          <div className="gh-box" aria-hidden="true">
+            <div className="gh-giant">{report?.name ?? DEMO_NAME}</div>
+
+            <div className="gh-tag" style={{ ...pct(TAG), transform: `rotate(${TAG.rotate}deg)` }}>
+              <img className="gh-tag-img gh-tag-cloudy" src={IMG("tag-cloudy")} alt="" draggable={false} />
+              <img className="gh-tag-img gh-tag-clean" src={IMG("tag-clean")} alt="" draggable={false} />
+              <span className="gh-shine" style={{ maskImage: `url(${IMG("tag-clean")})` }} />
+              <span className="gh-tag-name">{report?.name ?? DEMO_NAME}</span>
+            </div>
+
+            <svg className="gh-cords" viewBox={`0 0 ${BOX.w} ${BOX.h}`} preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="gh-cord-coral" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stopColor="#ffb3a8" />
+                  <stop offset="0.5" stopColor="#f95c4b" />
+                  <stop offset="1" stopColor="#c8402f" />
+                </linearGradient>
+                <filter id="gh-glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="6" />
+                </filter>
+              </defs>
+              {CORDS.map((spec, i) => (
+                <g key={spec.id} className={`gh-cord cord-${spec.kind}`} data-cord={spec.id}>
+                  {(["glow", "body", "shine"] as const).map((layer) => (
+                    <g key={layer} className={`gh-cord-${layer}`}>
+                      <path className="gh-cord-near" d={REST[i].near} />
+                      <path className="gh-cord-far" d={REST[i].far} />
+                    </g>
+                  ))}
+                  <circle
+                    className="gh-flash"
+                    data-flash={spec.id}
+                    cx={cutPoint(spec).x}
+                    cy={cutPoint(spec).y}
+                    r="28"
+                  />
+                </g>
+              ))}
+            </svg>
+
+            {(Object.keys(OBJECTS) as (keyof typeof OBJECTS)[]).map((name) => (
+              <div key={name} className="gh-object" data-object={name} style={pct(OBJECTS[name])}>
+                <div className="gh-object-bob">
+                  <img src={IMG(name === "frame" ? "nft-frame" : name)} alt="" draggable={false} />
+                </div>
+              </div>
+            ))}
+
+            <div className="gh-person" style={pct(PEOPLE.woman)}>
+              <img src={IMG("woman-body")} alt="" draggable={false} />
+            </div>
+            <div className="gh-person gh-woman-arm" style={pct(PEOPLE.womanArm)}>
+              <img src={IMG("woman-arm-scissors")} alt="" draggable={false} />
+            </div>
+            <div className="gh-person gh-man-arms" style={pct(PEOPLE.manArms)}>
+              <img src={IMG("man-arms")} alt="" draggable={false} />
+            </div>
+            <div className="gh-person" style={pct(PEOPLE.man)}>
+              <img src={IMG("man-body")} alt="" draggable={false} />
+            </div>
+
+            {card(
+              "keys",
+              <>
+                <strong>{counts?.keys ?? "–"}</strong> {plural(counts?.keys ?? 1, "Intents key", "Intents keys")}
+              </>,
+              <>
+                <strong>Cut</strong> in a Clean Sale
+              </>,
+            )}
+            {card(
+              "nfts",
+              <>
+                <strong>{counts?.nfts ?? "–"}</strong> {plural(counts?.nfts ?? 1, "NFT approval", "NFT approvals")}
+              </>,
+              <>
+                <strong>Cut</strong> in a Clean Sale
+              </>,
+            )}
+            {card(
+              "seller",
+              <>
+                <strong>{counts?.seller ?? "–"}</strong> {plural(counts?.seller ?? 1, "needs the seller", "need the seller")}
+              </>,
             )}
           </div>
-          <ul className="hero-chips" aria-label={`Example report for ${DEMO_NAME}`} hidden={Boolean(error)}>
-            <li className="hero-chip-slot slot-keys">
-              <span className="hero-chip">
-                <strong>{counts ? (counts.keys ?? "?") : "–"}</strong>
-                {counts?.keys === null ? "Intents keys unread" : plural(counts?.keys ?? 2, "Intents key", "Intents keys")}
-              </span>
-            </li>
-            <li className="hero-chip-slot slot-nfts">
-              <span className="hero-chip">
-                <strong>{counts ? (counts.nfts ?? "?") : "–"}</strong>
-                {counts?.nfts === null ? "NFTs unread" : plural(counts?.nfts ?? 2, "NFT approval", "NFT approvals")}
-              </span>
-            </li>
-            <li className="hero-chip-slot slot-seller">
-              <span className="hero-chip chip-seller">
-                <strong>{counts ? counts.seller : "–"}</strong>
-                {plural(counts?.seller ?? 2, "needs the seller", "need the seller")}
-              </span>
-            </li>
-          </ul>
+          {error ? <p className="hero-note">The example report didn&apos;t load.</p> : null}
         </div>
-
-        <div className="hero-crowd-ride crowd-ride-left" aria-hidden="true">
-          <div className="hero-crowd crowd-left">
-            <span className="crowd-person"><Character who="crowd" pose="sit" height={120} /></span>
-            <span className="crowd-person"><Character who="seller" pose="stand" height={132} /></span>
-            <span className="crowd-person"><Character who="crowd" pose="point" height={126} /></span>
-          </div>
-        </div>
-        <div className="hero-crowd-ride crowd-ride-right" aria-hidden="true">
-          <div className="hero-crowd crowd-right">
-            <span className="crowd-person"><Character who="buyer" pose="wave" height={128} flip /></span>
-            <span className="crowd-person"><Character who="checker" pose="stand" height={124} flip /></span>
-            <span className="crowd-person"><Character who="keeper" pose="sit" height={116} flip /></span>
-          </div>
-        </div>
-
-        <p className="hero-note hero-fade">
-          <span className="hero-rise">Example report: {DEMO_NAME}</span>
-        </p>
       </div>
     </section>
   );
