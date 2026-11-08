@@ -1,7 +1,7 @@
 // Home scene: the glass name tag tied to what the old owner still holds; scrolling cuts the cords ATTO can clear.
 /* eslint-disable @next/next/no-img-element -- pre-sized WebP layers that GSAP moves directly */
 "use client";
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { PillButton } from "@/components/ui/pill-button";
 import { gsap, ScrollTrigger, SplitText } from "@/motion/gsap";
@@ -15,6 +15,16 @@ import { BOX, CARDS, CORDS, OBJECTS, PEOPLE, TAG, pct } from "./layout";
 
 const IMG = (name: string) => `/glass/${name}.webp`;
 
+// People can be shown as glass or pencil drawings; ?people=pencil picks the drawings.
+const noSubscribe = () => () => {};
+function usePeopleSet(): "glass" | "pencil" {
+  return useSyncExternalStore(
+    noSubscribe,
+    () => (new URLSearchParams(window.location.search).get("people") === "pencil" ? "pencil" : "glass"),
+    () => "glass",
+  );
+}
+
 function plural(count: number, one: string, many: string) {
   return count === 1 ? one : many;
 }
@@ -26,6 +36,8 @@ export function HeroScene() {
   const ref = useRef<HTMLElement>(null);
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const peopleSet = usePeopleSet();
+  const PERSON = (name: string) => `/${peopleSet}/${name}.webp`;
   const { data: report, error } = useDemoReport();
   const counts = report ? heroCounts(report) : null;
 
@@ -224,16 +236,16 @@ export function HeroScene() {
             ))}
 
             <div className="gh-person" style={pct(PEOPLE.woman)}>
-              <img src={IMG("woman-body")} alt="" draggable={false} />
+              <img src={PERSON("woman-body")} alt="" draggable={false} />
             </div>
             <div className="gh-person gh-woman-arm" style={pct(PEOPLE.womanArm)}>
-              <img src={IMG("woman-arm-scissors")} alt="" draggable={false} />
+              <img src={PERSON("woman-arm-scissors")} alt="" draggable={false} />
             </div>
             <div className="gh-person gh-man-arms" style={pct(PEOPLE.manArms)}>
-              <img src={IMG("man-arms")} alt="" draggable={false} />
+              <img src={PERSON("man-arms")} alt="" draggable={false} />
             </div>
             <div className="gh-person" style={pct(PEOPLE.man)}>
-              <img src={IMG("man-body")} alt="" draggable={false} />
+              <img src={PERSON("man-body")} alt="" draggable={false} />
             </div>
 
             {card(
