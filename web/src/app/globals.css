@@ -6,6 +6,7 @@
 @import "../styles/scene-roles.css";
 @import "../styles/pill.css";
 @import "../styles/tag.css";
+@import "../styles/cast.css";
 @import "../styles/scenes/home.css";
 @theme inline {
   --color-background: var(--canvas);

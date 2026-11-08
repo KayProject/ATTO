@@ -1,0 +1,88 @@
+/* Cast objects: glass and frosted drawings coloured only through scene roles. */
+.cast { display: inline-block; flex: none; line-height: 0; }
+.cast > .cast-art { width: 100%; height: 100%; }
+.cast-art { overflow: visible; }
+
+.cast-art .c-stop-hi { stop-color: var(--glass-tint); stop-opacity: 0.78; }
+.cast-art .c-stop-mid { stop-color: var(--glass-tint); stop-opacity: 0.3; }
+.cast-art .c-stop-lo { stop-color: var(--glass-tint); stop-opacity: 0.12; }
+.cast-art .c-stop-frost { stop-color: var(--glass-tint); stop-opacity: 0.5; }
+.cast-art .c-stop-clear { stop-color: var(--glass-tint); stop-opacity: 0.04; }
+.cast-art .c-stop-core { stop-color: var(--highlight); stop-opacity: 0.85; }
+.cast-art .c-stop-core-out { stop-color: var(--highlight); stop-opacity: 0; }
+
+.cast-art .c-edge {
+  fill: none;
+  stroke: color-mix(in srgb, currentColor 34%, transparent);
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+}
+.cast-art .c-edge-dashed { stroke-dasharray: 3 3.4; }
+.cast-art .c-shine {
+  fill: none;
+  stroke: var(--glass-tint);
+  stroke-opacity: 0.95;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.cast-art .c-shadow { fill: currentColor; opacity: 0.26; }
+.cast-art .c-pane { fill: color-mix(in srgb, var(--glass-tint) 10%, transparent); }
+.cast-art .c-rim-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--glass-tint) 70%, transparent);
+  stroke-width: 1;
+}
+.cast-art .c-core { fill: var(--highlight); }
+.cast-art .c-core-line {
+  fill: none;
+  stroke: var(--highlight);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cast-art .c-core-thick { stroke-width: 3; }
+.cast-art .c-ink-line {
+  fill: none;
+  stroke: color-mix(in srgb, currentColor 40%, transparent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.cast-art .c-ink-soft { fill: color-mix(in srgb, currentColor 22%, transparent); }
+.cast-art .c-ink-dot { fill: color-mix(in srgb, currentColor 55%, transparent); }
+.cast-art .c-leaf {
+  fill: color-mix(in srgb, var(--highlight) 55%, transparent);
+  stroke: color-mix(in srgb, var(--glass-tint) 80%, transparent);
+  stroke-width: 0.9;
+}
+.cast-art .c-vein { fill: none; stroke: var(--glass-tint); stroke-opacity: 0.6; stroke-width: 0.8; stroke-linecap: round; }
+.cast-art .c-tie { fill: none; stroke: color-mix(in srgb, currentColor 45%, transparent); stroke-width: 1.4; stroke-linecap: round; }
+.cast-art .c-tie-dashed { stroke-dasharray: 1.6 2; }
+.cast-art .c-loop {
+  fill: none;
+  stroke: color-mix(in srgb, currentColor 60%, transparent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.cast-art .c-fog { opacity: 0.8; }
+
+/* Cut or spent: the glass dims and the tie ring opens. */
+.cast-art .c-whole,
+.cast-art .c-shadow { transition: opacity 420ms ease-out 220ms, transform 520ms cubic-bezier(0.3, 1.4, 0.5, 1) 160ms; }
+.cast-art[data-cut] .c-whole { opacity: 0.38; transform: translateY(2.5px); }
+.cast-art[data-cut] .c-shadow { opacity: 0.12; }
+.cast-art[data-cut] .c-glow { opacity: 0.2; }
+.cast-art[data-cut] .c-core,
+.cast-art[data-cut] .c-leaf { fill: color-mix(in srgb, currentColor 30%, transparent); }
+.cast-art[data-cut] .c-core-line { stroke: color-mix(in srgb, currentColor 35%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cast-art .c-whole,
+  .cast-art .c-shadow { transition: none; }
+}
+
+/* Illustrated people: a soft shadow on the ground under the figure. */
+.character {
+  display: block;
+  user-select: none;
+  filter: drop-shadow(0 10px 7px color-mix(in srgb, currentColor 20%, transparent));
+}
