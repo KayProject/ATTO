@@ -226,7 +226,13 @@
   }
 }
 .route-stage {
-  animation: arrive 240ms var(--ease) both;
+  animation: route-fade 240ms var(--ease) both;
+}
+/* Opacity only: a leftover transform would break pinned and fixed scenes inside the page. */
+@keyframes route-fade {
+  from {
+    opacity: 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .route-stage {
