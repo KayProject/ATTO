@@ -1,1 +1,160 @@
-.scene-hero { min-height: 100svh; }
+/* Hero: sky stage with the glass tag, frosted count chips, search, and a ground arc at the bottom. */
+.scene-hero {
+  position: relative;
+  margin-top: -3rem;
+  background: var(--sky);
+  color: var(--sky-ink);
+}
+.hero-stage {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  align-items: center;
+  gap: clamp(16px, 3vw, 48px);
+  padding: clamp(32px, 6vh, 72px) var(--scene-gutter) clamp(120px, 22vh, 220px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .scene-hero { height: 190svh; }
+  .hero-stage { position: sticky; top: 0; height: 100svh; min-height: 0; }
+}
+
+.hero-horizon { position: absolute; inset: 0; pointer-events: none; }
+.hero-ground {
+  position: absolute;
+  top: 70%;
+  left: 50%;
+  width: 240vw;
+  height: 200svh;
+  margin-left: -120vw;
+  border-radius: 50%;
+  background: var(--ground);
+  transform-origin: 50% 0;
+}
+
+.hero-copy { position: relative; z-index: 2; display: grid; gap: 20px; align-content: center; }
+.hero-title {
+  font-size: var(--display-lg);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  font-weight: 700;
+  text-transform: uppercase;
+  max-width: 9.5ch;
+  transform-origin: 0 0;
+  text-wrap: balance;
+}
+.hero-fade { display: grid; gap: 20px; }
+.hero-sub { font-size: clamp(1.05rem, 1.4vw, 1.3rem); max-width: 26ch; opacity: 0.82; }
+.hero-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 440px);
+  padding: 4px 4px 4px 20px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--glass-tint) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--glass-tint) 28%, transparent);
+  backdrop-filter: blur(14px);
+}
+.hero-search:focus-within { box-shadow: inset 0 0 0 2px var(--sky-ink); }
+.hero-search input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.05rem;
+  outline: none;
+}
+.hero-search input::placeholder { color: color-mix(in srgb, var(--sky-ink) 50%, transparent); }
+.hero-search .pill-primary { background: var(--sky-ink); color: var(--sky); }
+.hero-search .pill:disabled { cursor: default; }
+
+.hero-object { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; min-height: min(56vh, 520px); }
+.hero-tag { width: min(100%, 560px); }
+.hero-tag-wait {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1.6;
+  border-radius: 28px;
+  font-size: var(--display-md);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--glass-tint) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--glass-tint) 30%, transparent);
+}
+
+.hero-chips { position: absolute; inset: 0; list-style: none; margin: 0; padding: 0; pointer-events: none; }
+.hero-chip-slot { position: absolute; }
+.slot-keys { top: 2%; left: 4%; }
+.slot-nfts { top: 38%; right: -2%; }
+.slot-seller { top: 62%; left: -4%; }
+.hero-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 16px 10px 12px;
+  border-radius: 18px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--glass-tint) 14%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--glass-tint) 34%, transparent),
+    0 18px 40px -20px color-mix(in srgb, var(--night) 70%, transparent);
+  backdrop-filter: blur(16px);
+}
+.hero-chip strong { font-size: 1.6rem; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.hero-chip.chip-seller strong { color: var(--cord-seller); }
+
+.hero-note {
+  position: absolute;
+  right: var(--scene-gutter);
+  top: clamp(24px, 5vh, 56px);
+  z-index: 2;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* Crowds sit on the ground's edge and ride it up as the hero scrolls out. */
+.hero-crowd-ride {
+  position: absolute;
+  bottom: calc(30% - 6svh);
+  z-index: 1;
+  pointer-events: none;
+}
+.crowd-ride-left { left: 1vw; }
+.crowd-ride-right { right: 2vw; }
+.hero-crowd { display: flex; align-items: flex-end; }
+.crowd-person { display: block; margin-inline: -10px; }
+.crowd-person .character { display: block; max-height: 15svh; }
+
+@media (max-width: 52rem) {
+  .hero-stage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    align-content: start;
+    gap: 12px;
+    padding-top: 24px;
+    padding-bottom: 18svh;
+  }
+  .hero-title { font-size: clamp(2.4rem, 11vw, 3.4rem); max-width: 11ch; }
+  .hero-copy { gap: 14px; }
+  .hero-fade { gap: 14px; }
+  .hero-object { min-height: 0; padding-block: 52px 48px; align-self: start; }
+  .hero-tag { width: min(78%, 320px); }
+  .slot-keys { top: 0; left: 0; }
+  .slot-nfts { top: auto; bottom: 6px; right: 0; }
+  .slot-seller { top: 0; right: 0; left: auto; bottom: auto; }
+  .hero-chip { font-size: 0.8rem; padding: 6px 12px 6px 10px; }
+  .hero-chip strong { font-size: 1.15rem; }
+  .hero-note { display: none; }
+  .hero-ground { top: 80%; }
+  .hero-crowd-ride { bottom: calc(20% - 5svh); }
+  .crowd-person .character { max-height: 9svh; }
+  .crowd-person { margin-inline: -6px; }
+}
