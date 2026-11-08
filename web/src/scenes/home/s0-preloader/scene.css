@@ -6,7 +6,7 @@
   z-index: 80;
   pointer-events: none;
   background: var(--ground);
-  animation: preloader-fallback 0s 4s forwards;
+  animation: preloader-fallback 0s 5.5s forwards;
 }
 .scene-preloader { display: grid; place-items: center; overflow: hidden; }
 .scene-preloader[data-done] { display: none; }
