@@ -1,1 +1,58 @@
-.scene-statement { min-height: 100svh; }
+/* Statement: one large sentence on the ground, centred, with a highlighted ending and a dotted link. */
+.scene-statement {
+  position: relative;
+  background: var(--ground);
+  color: var(--ground-ink);
+}
+.statement-stage {
+  min-height: 100svh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 28px;
+  padding: 72px var(--scene-gutter);
+  text-align: center;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .scene-statement { height: 185svh; margin-top: -40svh; }
+  .statement-stage { position: sticky; top: 0; height: 100svh; min-height: 0; }
+}
+.statement-text {
+  max-width: 17ch;
+  font-size: var(--display-md);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.statement-mark {
+  position: relative;
+  display: inline-block;
+  padding: 0 0.18em;
+  color: var(--highlight-ink);
+  white-space: nowrap;
+}
+.statement-hl {
+  position: absolute;
+  inset: 0.08em 0 0.02em;
+  z-index: -1;
+  border-radius: 0.14em;
+  background: var(--highlight);
+  transform-origin: 0 50%;
+}
+.statement-mark { isolation: isolate; }
+.statement-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding-inline: 8px;
+  font-size: 0.95rem;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--faint-ink);
+  text-underline-offset: 4px;
+}
+.statement-link:hover { text-decoration-color: currentColor; }
+.statement-link:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 8px; }
+.statement-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ground-ink); }
