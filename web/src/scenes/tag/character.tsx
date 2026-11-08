@@ -14,8 +14,18 @@ export interface CharacterProps {
   className?: string;
 }
 
+/** Poses drawn so far. A missing pose falls back to the character's first drawn pose. */
+const DRAWN: Record<Who, Pose[]> = {
+  seller: ["stand"],
+  buyer: ["stand"],
+  keeper: ["stand"],
+  checker: ["stand"],
+  crowd: ["sit"],
+};
+
 export function characterSrc(who: Who, pose: Pose = "stand") {
-  return `/cast/people/${who}-${pose}.webp`;
+  const drawn = DRAWN[who];
+  return `/cast/people/${who}-${drawn.includes(pose) ? pose : drawn[0]}.webp`;
 }
 
 export function Character({ who, pose = "stand", height = 160, flip = false, label, className = "" }: CharacterProps) {
