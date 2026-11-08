@@ -1,15 +1,14 @@
-.scene-footer { position: relative; isolation: isolate; min-height: 44rem; height: 90svh; overflow: clip; background: var(--night); color: var(--ground-ink); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 10rem var(--scene-gutter) 8rem; }
-.footer-dome { position: absolute; z-index: -1; top: 22%; left: -25%; width: 150%; height: 110%; border-radius: 50% 50% 0 0 / 40% 40% 0 0; background: var(--ground); }
-.footer-cast { position: absolute; top: calc(22% - 6rem); display: flex; align-items: flex-end; gap: 0.5rem; }
-.footer-cast .cast:nth-child(1) { transform: rotate(-25deg) translateY(2rem); }
-.footer-cast .cast:nth-child(3) { transform: rotate(12deg); }
-.footer-cast .cast:nth-child(4) { transform: rotate(25deg) translateY(2rem); }
+.scene-footer { position: relative; isolation: isolate; min-height: 46rem; height: 100svh; overflow: clip; background: var(--night); color: var(--ground-ink); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 18rem var(--scene-gutter) 3rem; }
+.footer-dome { position: absolute; z-index: -1; top: 46%; left: -25%; width: 150%; height: 110%; border-radius: 50% 50% 0 0 / 40% 40% 0 0; background: var(--ground); }
+.footer-cast { position: absolute; bottom: calc(54% - 1.25rem); display: flex; align-items: flex-end; gap: clamp(0.5rem, 2vw, 1.5rem); }
+.footer-cast .cast { margin-bottom: 0.75rem; }
 .footer-dome-copy { position: relative; display: grid; justify-items: center; gap: 3rem; }
 .footer-dome-copy h2 { font-size: var(--display-xl); text-align: center; letter-spacing: -0.065em; }
 .footer-dome-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
 @media (max-width: 47.99rem) {
   .scene-footer { min-height: 36rem; height: 80svh; padding-block: 8rem 6rem; }
-  .footer-cast { transform: scale(0.72); transform-origin: bottom center; top: calc(22% - 6rem); }
+  .footer-cast { transform: scale(0.6); transform-origin: bottom center; }
+  .footer-cast .cast { display: none; }
   .footer-dome-copy { gap: 2rem; }
   .footer-dome-copy h2 { max-width: 6ch; }
   .footer-dome-actions { flex-direction: column; align-items: center; }

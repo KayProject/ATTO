@@ -6,6 +6,7 @@ import { gsap } from "@/motion/gsap";
 import { EASE, SCRUB } from "@/motion/tokens";
 import { useScene } from "@/motion/use-scene";
 import { CastObject } from "@/scenes/tag/cast";
+import { Character } from "@/scenes/tag/character";
 
 export function FooterDomeScene() {
   const ref = useRef<HTMLElement>(null);
@@ -18,7 +19,7 @@ export function FooterDomeScene() {
   return (
     <section ref={ref} className="scene scene-footer" aria-labelledby="footer-dome-title">
       <div className="footer-dome" aria-hidden="true" />
-      <div className="footer-cast" aria-hidden="true"><CastObject kind="key" size={88} cut /><CastObject kind="vault" size={144} /><CastObject kind="seedling" size={112} /><CastObject kind="stamp" size={88} /></div>
+      <div className="footer-cast" aria-hidden="true"><Character who="seller" height={170} /><CastObject kind="vault" size={96} /><Character who="crowd" pose="sit" height={150} /><CastObject kind="seedling" size={80} /><Character who="buyer" height={170} flip /></div>
       <div className="footer-dome-copy"><h2 id="footer-dome-title">Sell it clean.</h2><div className="footer-dome-actions"><PillLink href="/search">Search a name</PillLink><PillLink href="/sale" tone="secondary">List a name</PillLink></div></div>
     </section>
   );
