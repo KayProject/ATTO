@@ -1,0 +1,9 @@
+/* Each home scene owns its own stylesheet. */
+@import "../../scenes/home/s0-preloader/scene.css";
+@import "../../scenes/home/s1-hero/scene.css";
+@import "../../scenes/home/s2-statement/scene.css";
+@import "../../scenes/home/s3-leftovers/scene.css";
+@import "../../scenes/home/s4-verbs/scene.css";
+@import "../../scenes/home/s5-journey/scene.css";
+@import "../../scenes/home/s6-check/scene.css";
+@import "../../scenes/home/s7-footer/scene.css";

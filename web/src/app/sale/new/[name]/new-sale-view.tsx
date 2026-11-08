@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useState, type FormEvent } from "react";
 import { useAction, useLoad, usePersona } from "@/components/providers";
@@ -11,7 +12,15 @@ export function NewSaleView({ params }: { params: Promise<{ name: string }> }) {
   const name = decodeURIComponent(use(params).name);
   const router = useRouter();
   const { account } = usePersona();
-  const { data: report, error: loadError, loading } = useLoad(() => atto.getReport(name), [name]);
+  const {
+    data,
+    error: loadError,
+    loading,
+  } = useLoad(async () => {
+    const [report, owned] = await Promise.all([atto.getReport(name), atto.ownedBy()]);
+    return { report, mine: owned.some((item) => item.name === name) };
+  }, [name]);
+  const report = data?.report;
   const { run, busy, error } = useAction();
   const [price, setPrice] = useState("");
   const [priceError, setPriceError] = useState<string | null>(null);
@@ -35,9 +44,14 @@ export function NewSaleView({ params }: { params: Promise<{ name: string }> }) {
   return (
     <div className="frame stack-lg">
       <div className="stack">
-        <h1>List {name}</h1>
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <Link href={`/names/${name}`}>Public report</Link>
+          <span>/</span>
+          <Link href="/sale">Sales</Link>
+        </nav>
+        <h1 className="screen-title">List {name}</h1>
         <p>Listing as {account}. You keep the name until a buyer has paid and you hand it over.</p>
-        <form className="stack" onSubmit={submit} noValidate>
+        <form className="ticket-panel task-panel stack" onSubmit={submit} noValidate>
           <div className="field">
             <label htmlFor="price">Price in NEAR</label>
             <input
@@ -56,8 +70,14 @@ export function NewSaleView({ params }: { params: Promise<{ name: string }> }) {
             ) : null}
           </div>
           <p className="small soft">Listing takes a 0.05 NEAR deposit, returned when the listing ends.</p>
+          {!report.clean_sale.supported ? <p className="notice notice-bad">{report.clean_sale.reason}</p> : null}
+          {!data?.mine ? <p className="notice notice-bad">The acting account does not own this name.</p> : null}
           {error ? <p className="notice notice-bad">{error}</p> : null}
-          <button type="submit" className="button button-primary" disabled={busy}>
+          <button
+            type="submit"
+            className="button button-primary"
+            disabled={busy || !report.clean_sale.supported || !data?.mine || report.network === "mainnet"}
+          >
             List this name
           </button>
         </form>

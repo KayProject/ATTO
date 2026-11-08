@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import "@fontsource-variable/fraunces";
 import "@fontsource-variable/inter";
 import "@fontsource/jetbrains-mono/400.css";
 import "./globals.css";
@@ -9,7 +8,7 @@ import { ConsentBanner, MockBar, SiteFooter, SiteHeader } from "@/components/she
 
 export const metadata: Metadata = {
   title: { default: "ATTO", template: "%s | ATTO" },
-  description: "See what a NEAR name is still tied to, and buy it with nothing left attached.",
+  description: "Inspect a NEAR name and review its connections before a sale.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

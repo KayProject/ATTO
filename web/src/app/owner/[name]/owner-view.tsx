@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SceneArt } from "@/components/product/scene-art";
 import { use, useState, type FormEvent } from "react";
 import { useAction, useLoad, usePersona } from "@/components/providers";
 import { ReportProvenance, Tally } from "@/components/report";
@@ -13,12 +15,14 @@ function AmountForm({
   label,
   action,
   busy,
+  priority = "secondary",
   onSubmit,
 }: {
   id: string;
   label: string;
   action: string;
   busy: boolean;
+  priority?: "primary" | "secondary";
   onSubmit: (yocto: string) => Promise<unknown>;
 }) {
   const [value, setValue] = useState("");
@@ -37,10 +41,17 @@ function AmountForm({
     <form className="stack" onSubmit={submit} noValidate>
       <div className="field">
         <label htmlFor={id}>{label}</label>
-        <input id={id} type="text" inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} aria-invalid={invalid} />
+        <input
+          id={id}
+          type="text"
+          inputMode="decimal"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          aria-invalid={invalid}
+        />
         {invalid ? <p className="ask-seller small">Enter an amount above 0, such as 5 or 2.5.</p> : null}
       </div>
-      <button type="submit" className="button" disabled={busy}>
+      <button type="submit" className={`button${priority === "primary" ? " button-primary" : ""}`} disabled={busy}>
         {action}
       </button>
     </form>
@@ -87,29 +98,38 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
 
   return (
     <div className="frame stack-lg">
-      <div className="stack">
-        <h1 className="deed-title">{view.name}</h1>
-        <p>Only {view.owner}, the current owner, can open this page.</p>
-        <dl className="facts">
-          <div>
-            <dt>Lease ends</dt>
-            <dd>{formatDate(view.lease_end)}</dd>
+      <nav className="breadcrumb" aria-label="Breadcrumb">
+        <Link href="/owner">My names</Link>
+        <span>/</span>
+        <Link href={`/names/${name}`}>Public report</Link>
+      </nav>
+      <div className="owner-scene">
+        <div>
+          <div className="stack">
+            <h1 className="deed-title">{view.name}</h1>
+            <p>Only {view.owner}, the current owner, can open this page.</p>
+            <dl className="facts">
+              <div>
+                <dt>Lease ends</dt>
+                <dd>{formatDate(view.lease_end)}</dd>
+              </div>
+              <div>
+                <dt>Next renewal</dt>
+                <dd>{formatNear(view.rent)} NEAR</dd>
+              </div>
+              <div>
+                <dt>Keeper</dt>
+                <dd>{reserve.enabled ? "On" : "Off"}</dd>
+              </div>
+              <div>
+                <dt>Share of earnings</dt>
+                <dd>{reserve.share_bps / 100}%</dd>
+              </div>
+            </dl>
           </div>
-          <div>
-            <dt>Next renewal</dt>
-            <dd>{formatNear(view.rent)} NEAR</dd>
-          </div>
-          <div>
-            <dt>Keeper</dt>
-            <dd>{reserve.enabled ? "On" : "Off"}</dd>
-          </div>
-          <div>
-            <dt>Share of earnings</dt>
-            <dd>{reserve.share_bps / 100}%</dd>
-          </div>
-        </dl>
+        </div>
+        <SceneArt scene="renewal" />
       </div>
-
       {error ? <p className="notice notice-bad">{error}</p> : null}
 
       <section className="stack">
@@ -125,57 +145,96 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
         </div>
         {short ? (
           <p className="notice notice-bad">
-            The reserve is {formatNear(view.shortfall)} NEAR short of the next renewal, which is needed by {formatDate(view.lease_end)}.
-            Top it up or the name could be lost.
+            The reserve is {formatNear(view.shortfall)} NEAR short of the next renewal, which is needed by{" "}
+            {formatDate(view.lease_end)}. Top it up or the name could be lost.
           </p>
         ) : (
-          <p className="soft">This covers the next renewal, which costs {formatNear(view.renewal_cost)} NEAR including a small margin the registry refunds.</p>
+          <p className="soft">
+            This covers the next renewal, which costs {formatNear(view.renewal_cost)} NEAR including a small margin the
+            registry refunds.
+          </p>
         )}
         <p className="small soft">The reserve belongs to the name. If you sell the name, it goes to the buyer.</p>
         {view.can_renew ? (
-          <button type="button" className="button button-primary" disabled={busy} onClick={() => void run(() => atto.renew(name))}>
+          <button
+            type="button"
+            className="button button-primary"
+            disabled={busy}
+            onClick={() => void run(() => atto.renew(name))}
+          >
             Renew now from the reserve
           </button>
         ) : (
-          <p className="small soft">Renewal opens {formatDate(view.renew_window_opens)}, 30 days before the lease ends.</p>
+          <p className="small soft">
+            Renewal opens {formatDate(view.renew_window_opens)}, 30 days before the lease ends.
+          </p>
         )}
       </section>
 
-      <section className="report-head">
-        <AmountForm id="top-up" label="Top up, in NEAR" action="Top up the reserve" busy={busy} onSubmit={(a) => run(() => atto.topUp(name, a))} />
-        <AmountForm id="withdraw" label="Withdraw, in NEAR" action="Withdraw to the name" busy={busy} onSubmit={(a) => run(() => atto.withdraw(name, a))} />
-      </section>
+      <Tabs defaultValue="topup">
+        <TabsList aria-label="Manage reserve">
+          <TabsTrigger value="topup">Top up</TabsTrigger>
+          <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
+          <TabsTrigger value="keeper">Keeper</TabsTrigger>
+        </TabsList>
+        <TabsContent value="topup" className="ticket-panel task-panel">
+          <AmountForm
+            id="top-up"
+            priority={view.can_renew ? "secondary" : "primary"}
+            label="Top up, in NEAR"
+            action="Top up the reserve"
+            busy={busy}
+            onSubmit={(a) => run(() => atto.topUp(name, a))}
+          />
+        </TabsContent>
+        <TabsContent value="withdraw" className="ticket-panel task-panel">
+          <AmountForm
+            id="withdraw"
+            label="Withdraw, in NEAR"
+            action="Withdraw to the name"
+            busy={busy}
+            onSubmit={(a) => run(() => atto.withdraw(name, a))}
+          />
+        </TabsContent>
 
-      <section className="stack">
-        <h2>Keeper</h2>
-        <p>
-          Keeper can move a share of this name&apos;s new income into the reserve. The name&apos;s wallet caps that at {formatNear(view.grant_cap)} NEAR,
-          one year&apos;s rent, and only lets it go to the reserve.
-        </p>
-        <div className="field">
-          <label htmlFor="share">Share of new income, in %</label>
-          <input id="share" type="text" inputMode="decimal" value={share} onChange={(e) => setShare(e.target.value)} aria-invalid={!shareValid} />
-          {!shareValid ? <p className="ask-seller small">Enter a share between 0 and 100.</p> : null}
-        </div>
-        <div className="row">
-          <button
-            type="button"
-            className="button"
-            disabled={busy || !shareValid}
-            onClick={() => void run(() => atto.configureKeeper(name, reserve.enabled, shareBps))}
-          >
-            Save share
-          </button>
-          <button
-            type="button"
-            className="button"
-            disabled={busy || !shareValid}
-            onClick={() => void run(() => atto.configureKeeper(name, !reserve.enabled, shareBps))}
-          >
-            {reserve.enabled ? "Switch Keeper off" : "Switch Keeper on"}
-          </button>
-        </div>
-      </section>
+        <TabsContent value="keeper" className="ticket-panel task-panel stack">
+          <h2>Keeper</h2>
+          <p>
+            Keeper can move a share of this name&apos;s new income into the reserve. The name&apos;s wallet caps that at{" "}
+            {formatNear(view.grant_cap)} NEAR, one year&apos;s rent, and only lets it go to the reserve.
+          </p>
+          <div className="field">
+            <label htmlFor="share">Share of new income, in %</label>
+            <input
+              id="share"
+              type="text"
+              inputMode="decimal"
+              value={share}
+              onChange={(e) => setShare(e.target.value)}
+              aria-invalid={!shareValid}
+            />
+            {!shareValid ? <p className="ask-seller small">Enter a share between 0 and 100.</p> : null}
+          </div>
+          <div className="row">
+            <button
+              type="button"
+              className="button"
+              disabled={busy || !shareValid}
+              onClick={() => void run(() => atto.configureKeeper(name, reserve.enabled, shareBps))}
+            >
+              Save share
+            </button>
+            <button
+              type="button"
+              className="button"
+              disabled={busy || !shareValid}
+              onClick={() => void run(() => atto.configureKeeper(name, !reserve.enabled, shareBps))}
+            >
+              {reserve.enabled ? "Switch Keeper off" : "Switch Keeper on"}
+            </button>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <section className="stack">
         <h2>Latest Title Search</h2>

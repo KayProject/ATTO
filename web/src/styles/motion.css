@@ -1,0 +1,241 @@
+.button {
+  border-radius: var(--radius-pill);
+  padding: 10px 20px;
+  min-width: 44px;
+  min-height: 48px;
+  transition:
+    background var(--quick),
+    transform var(--quick);
+  width: fit-content;
+  max-width: 100%;
+}
+.button-primary {
+  padding-right: 8px;
+  gap: 20px;
+}
+.button-primary:after {
+  content: "";
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--primary-foreground);
+  color: var(--primary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256' viewBox='0 0 256 256'%3E%3Cpath fill='%23202020' d='M204,64V168a12,12,0,0,1-24,0V93L72.49,200.49a12,12,0,0,1-17-17L163,76H88a12,12,0,0,1,0-24H192A12,12,0,0,1,204,64Z'/%3E%3C/svg%3E");
+  background-size: 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: transform var(--quick);
+}
+.button-primary:focus-visible:after {
+  transform: rotate(45deg);
+}
+.button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.button-secondary {
+  background: var(--secondary);
+  border-color: transparent;
+}
+.button-icon {
+  width: 48px;
+  padding: 8px;
+}
+.stamp {
+  border: 0;
+  outline: 0;
+  border-radius: var(--radius-pill);
+  padding: 4px 8px;
+  background: var(--raised);
+  white-space: normal;
+}
+.deed-title {
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  letter-spacing: -0.06em;
+}
+.ledger {
+  border: 0;
+  display: grid;
+  gap: 1rem;
+}
+.ledger > li {
+  background: var(--surface);
+  border: 0;
+  border-radius: var(--radius-ticket);
+  padding: 1.5rem;
+  box-shadow: var(--lift);
+}
+.ledger-name {
+  font-size: 1.5rem;
+  font-weight: 550;
+  letter-spacing: -0.04em;
+}
+.notice {
+  border-radius: var(--radius-control);
+  max-width: 44rem;
+}
+.notice-bad {
+  border-left: 4px solid var(--foreground);
+}
+.report-section {
+  display: block;
+  padding: 0;
+}
+.report-section summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 0;
+  list-style: none;
+  font-weight: 550;
+}
+.report-section summary:after {
+  content: "+";
+  font-size: 24px;
+}
+.report-section[open] summary:after {
+  content: "−";
+}
+.report-section .report-body {
+  padding: 0 0 1.5rem;
+}
+.report-count {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin-left: auto;
+  font-weight: 400;
+}
+.report-head {
+  gap: 3rem;
+}
+.report-section h3 {
+  font-size: 1rem;
+}
+.plat {
+  grid-template-columns: minmax(0, auto) 48px minmax(0, 1fr);
+  font-size: 0.875rem;
+}
+.plat-parcel {
+  border-radius: 50%;
+  border: 1px solid var(--separator);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 1.25rem;
+  max-width: 9rem;
+}
+.plat-item-label {
+  white-space: normal;
+  font-size: 0.875rem;
+}
+.plat-item-state {
+  font-size: 0.875rem;
+}
+.plat-item {
+  height: auto;
+  min-height: var(--plat-row);
+}
+.plat-lines {
+  max-width: 100%;
+}
+.search input {
+  font-family: var(--font-body);
+  font-size: 1.25rem;
+  min-width: 0;
+  border-radius: var(--radius-control);
+}
+.search {
+  max-width: none;
+}
+.search .button {
+  min-height: 56px;
+}
+.facts {
+  gap: 1.5rem;
+}
+.facts dd {
+  font-size: 1.125rem;
+}
+.steps {
+  gap: 8px;
+}
+.step {
+  font-size: 0.875rem;
+}
+.prose h1 {
+  font-size: clamp(2.25rem, 5vw, 4rem);
+}
+.consent {
+  background: var(--surface);
+  border-top: 1px solid var(--separator);
+}
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hero .scene-copy {
+  animation: arrive 260ms var(--ease) both;
+}
+.hero .scene-art {
+  animation: arrive 280ms 80ms var(--ease) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *:before,
+  *:after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .button-primary:hover:after,
+  .button-primary:focus-visible:after,
+  .button:active {
+    transform: none !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .site-nav {
+    background: var(--surface);
+    box-shadow: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .button-primary:after {
+    background-color: #fff;
+  }
+  .scene-art {
+    background: #e8e8e8;
+    border-radius: 48% 48% 28% 28%;
+  }
+}
+.scene-art img {
+  filter: grayscale(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button-primary:hover:after {
+    transform: rotate(45deg);
+  }
+}
+.route-stage {
+  animation: arrive 240ms var(--ease) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-stage {
+    animation: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .deed-title {
+    font-size: clamp(1.75rem, 7vw, 2.5rem);
+  }
+}

@@ -45,17 +45,23 @@ function Event({ event }: { event: HistoryEvent }) {
         {formatDateTime(event.block_time)}
         {parties.length ? `, ${parties.join(" ")}` : ""}
       </p>
+      <p className="small soft">
+        Transaction <code title={event.tx_hash}>{shortHash(event.tx_hash)}</code>
+      </p>
       {event.note ? <p>{event.note}</p> : null}
       {sale ? (
         <div className="stack">
           <p>
-            Sold for {formatNear(sale.price)} NEAR. <Link href={`/sale/${sale.listing_id}`}>Open sale {sale.listing_id}</Link>
+            Sold for {formatNear(sale.price)} NEAR.{" "}
+            <Link href={`/sale/${sale.listing_id}`}>Open sale {sale.listing_id}</Link>
           </p>
           <ReportRow title="Report the buyer accepted" report={sale.accepted_report} />
           <ReportRow title="Final report" report={sale.final_report} />
           <div className="small">
             <p>Cleared by the escrow:</p>
-            {sale.keys_removed.length + sale.nfts_revoked.length === 0 ? <p className="soft">Nothing needed clearing.</p> : null}
+            {sale.keys_removed.length + sale.nfts_revoked.length === 0 ? (
+              <p className="soft">Nothing needed clearing.</p>
+            ) : null}
             <ul>
               {sale.keys_removed.map((k) => (
                 <li key={k}>
@@ -82,7 +88,7 @@ export function HistoryView({ params }: { params: Promise<{ name: string }> }) {
   return (
     <div className="frame stack-lg">
       <div className="stack">
-        <h1>History of {name}</h1>
+        <h1 className="screen-title">History of {name}</h1>
         <p>
           <Link href={`/names/${name}`}>Back to the report</Link>
         </p>

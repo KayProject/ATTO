@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Screen } from "@/components/product/screen";
 import { useLoad, usePersona } from "@/components/providers";
 import { atto } from "@/lib/atto/client";
 import { formatDate } from "@/lib/atto/format";
@@ -10,15 +11,25 @@ export function MyNamesView() {
   const { data, error, loading } = useLoad(() => atto.ownedBy(), []);
 
   return (
-    <div className="frame stack-lg">
+    <Screen>
       <div className="stack">
-        <h1>My names</h1>
+        <h1 className="screen-title">
+          Your names.
+          <br />
+          In your hands.
+        </h1>
         <p>Names owned by {account}.</p>
       </div>
       {loading ? <p className="soft">Loading names…</p> : null}
       {error ? <p className="notice notice-bad">{error}</p> : null}
       {data && data.length === 0 ? (
-        <p>This account owns no names. Switch to the owner in the bar above to see some.</p>
+        <p>
+          This account owns no names. Switch the acting account in Demo controls, or{" "}
+          <Link className="empty-link" href="/search">
+            inspect a public name
+          </Link>
+          .
+        </p>
       ) : null}
       {data && data.length > 0 ? (
         <ul className="ledger">
@@ -33,6 +44,6 @@ export function MyNamesView() {
           ))}
         </ul>
       ) : null}
-    </div>
+    </Screen>
   );
 }

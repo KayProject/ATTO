@@ -15,8 +15,13 @@ export default function CookiesPage() {
           <code>atto-persona</code> remembers who you&apos;re acting as in the demo.
         </li>
       </ul>
-      <p>Both live in your browser&apos;s local storage, and you can clear them at any time in your browser settings.</p>
-      <p>Your wallet may store its own connection details once real wallets are connected. That&apos;s covered by your wallet&apos;s own policy.</p>
+      <p>
+        Both live in your browser&apos;s local storage, and you can clear them at any time in your browser settings.
+      </p>
+      <p>
+        Your wallet may store its own connection details once real wallets are connected. That&apos;s covered by your
+        wallet&apos;s own policy.
+      </p>
     </div>
   );
 }

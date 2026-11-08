@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Screen } from "@/components/product/screen";
 import { useState, type FormEvent } from "react";
 import { KIND_LABEL } from "@/lib/atto/check";
 import { atto } from "@/lib/atto/client";
@@ -36,12 +37,12 @@ export function PayView() {
   const answer = outcome?.answer;
 
   return (
-    <div className="frame stack-lg">
+    <Screen>
       <div className="stack">
-        <h1>Pay a name</h1>
-        <p>This demo shows what an app can do with ATTO&apos;s check: warn you if the name changed owner recently. It sends no money.</p>
+        <h1 className="screen-title">Before you pay.</h1>
+        <p>Check whether a name changed owner in the last seven days. This sends no money.</p>
       </div>
-      <form className="stack" onSubmit={check}>
+      <form className="ticket-panel task-panel stack" onSubmit={check}>
         <div className="field">
           <label htmlFor="pay-name">Name to pay</label>
           <input
@@ -62,14 +63,17 @@ export function PayView() {
       <div aria-live="polite" className="stack">
         {error ? <p className="notice notice-bad">{error}</p> : null}
         {outcome && answer === null ? (
-          <p className="notice">ATTO has no history for {outcome.name}, so it can&apos;t say whether it changed owner.</p>
+          <p className="notice">
+            ATTO has no history for {outcome.name}, so it can&apos;t say whether it changed owner.
+          </p>
         ) : null}
         {outcome && answer?.changed ? (
           <div className="notice notice-bad stack">
             <h2>{outcome.name} changed owner recently</h2>
             <p>
               {KIND_LABEL[answer.kind!]} on {formatDate(answer.at!)}
-              {answer.previous_owner ? `, previously ${answer.previous_owner}` : ""}. Make sure you still mean to pay this name.
+              {answer.previous_owner ? `, previously ${answer.previous_owner}` : ""}. Make sure you still mean to pay
+              this name.
             </p>
             <p>
               <Link href={`/names/${outcome.name}/history`}>See its history</Link>
@@ -77,9 +81,11 @@ export function PayView() {
           </div>
         ) : null}
         {outcome && answer && !answer.changed ? (
-          <p className="notice notice-done">{outcome.name} hasn&apos;t changed owner in the last {WINDOW_DAYS} days.</p>
+          <p className="notice notice-done">
+            {outcome.name} hasn&apos;t changed owner in the last {WINDOW_DAYS} days.
+          </p>
         ) : null}
       </div>
-    </div>
+    </Screen>
   );
 }

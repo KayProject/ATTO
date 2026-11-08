@@ -1,0 +1,17 @@
+/* Still glass tag (poster). The 3D tag replaces the body; cords keep these roles. */
+.tag { position: relative; display: grid; gap: 12px; margin: 0; }
+.tag-body {
+  display: grid; place-items: center;
+  aspect-ratio: 1.6; border-radius: 28px;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--glass-tint) 55%, transparent), color-mix(in srgb, var(--glass-tint) 12%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--glass-tint) 60%, transparent), 0 30px 60px -30px rgb(0 0 0 / 0.35);
+  backdrop-filter: blur(12px);
+}
+.tag-name { font-size: var(--display-md); font-weight: 600; letter-spacing: -0.02em; }
+.tag-inline .tag-name { font-size: 1rem; }
+.tag-cords { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.tag-cord { font-size: 0.875rem; padding: 4px 10px; border-radius: 999px; border: 1px solid; }
+.cord-clears { border-color: var(--cord-clears); }
+.cord-seller { border-color: var(--cord-seller); }
+.cord-unread { border-style: dashed; border-color: var(--cord-unread); }
+.tag-cord[data-cut] { text-decoration: line-through; opacity: 0.5; }

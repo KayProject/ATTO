@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Listing } from "@atto/shared";
 import { useLoad, usePersona } from "@/components/providers";
 import { atto } from "@/lib/atto/client";
@@ -35,55 +36,67 @@ export function SalesView() {
 
   return (
     <div className="frame stack-lg">
-      <h1>Sales</h1>
+      <div className="row" style={{ justifyContent: "space-between" }}>
+        <h1 className="screen-title">Find your next name.</h1>
+        <Link className="button button-primary" href="/owner">
+          Sell a name
+        </Link>
+      </div>
+      <Tabs defaultValue="available">
+        <TabsList aria-label="Sales views">
+          <TabsTrigger value="available">Available</TabsTrigger>
+          <TabsTrigger value="mine">Your sales</TabsTrigger>
+          <TabsTrigger value="sell">Ready to list</TabsTrigger>
+        </TabsList>
 
-      <section className="stack">
-        <h2>Names for sale</h2>
-        {data.open.length ? (
-          <ul className="ledger">
-            {data.open.map((l) => (
-              <SaleRow key={l.id} listing={l} />
-            ))}
-          </ul>
-        ) : (
-          <p>No names are listed right now. Switch to the seller in the bar above and list one.</p>
-        )}
-      </section>
+        <TabsContent value="available" className="stack">
+          <h2>Names for sale</h2>
+          {data.open.length ? (
+            <ul className="ledger">
+              {data.open.map((l) => (
+                <SaleRow key={l.id} listing={l} />
+              ))}
+            </ul>
+          ) : (
+            <p>No names are listed right now. Switch to the seller in the bar above and list one.</p>
+          )}
+        </TabsContent>
 
-      <section className="stack">
-        <h2>Your sales</h2>
-        {data.mine.length ? (
-          <ul className="ledger">
-            {data.mine.map((l) => (
-              <SaleRow key={l.id} listing={l} />
-            ))}
-          </ul>
-        ) : (
-          <p>{account} isn&apos;t part of any sale yet.</p>
-        )}
-      </section>
+        <TabsContent value="mine" className="stack">
+          <h2>Your sales</h2>
+          {data.mine.length ? (
+            <ul className="ledger">
+              {data.mine.map((l) => (
+                <SaleRow key={l.id} listing={l} />
+              ))}
+            </ul>
+          ) : (
+            <p>{account} isn&apos;t part of any sale yet.</p>
+          )}
+        </TabsContent>
 
-      <section className="stack">
-        <h2>Sell a name</h2>
-        {toList.length ? (
-          <ul className="ledger">
-            {toList.map((o) => (
-              <li key={o.name}>
-                <span className="ledger-name">{o.name}</span>
-                {o.clean_sale.supported ? (
-                  <Link className="button" href={`/sale/new/${o.name}`}>
-                    List this name
-                  </Link>
-                ) : (
-                  <span className="small soft">Clean Sale isn&apos;t available for this name.</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>{account} has no names to list.</p>
-        )}
-      </section>
+        <TabsContent value="sell" className="stack">
+          <h2>Sell a name</h2>
+          {toList.length ? (
+            <ul className="ledger">
+              {toList.map((o) => (
+                <li key={o.name}>
+                  <span className="ledger-name">{o.name}</span>
+                  {o.clean_sale.supported ? (
+                    <Link className="button" href={`/sale/new/${o.name}`}>
+                      List this name
+                    </Link>
+                  ) : (
+                    <span className="small soft">Clean Sale isn&apos;t available for this name.</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>{account} has no names to list.</p>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

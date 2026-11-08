@@ -1,36 +1,46 @@
-/* ATTO design tokens. The look comes from title deeds: security paper, bottle-green ink, notary violet. */
+/* HIG web foundations: 16px body/headline, 14px caption, 28/36px titles.
+   The display extension is an intentional editorial choice. All targets are 44px.
+   Spacing: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64px. */
 :root {
   color-scheme: light;
-
-  /* Colour */
-  --paper: #e9efe9;
-  --paper-raised: #f5f8f4;
-  --ink: #14302b;
-  --ink-soft: #4a635c;
-  --rule: #b7c7bd;
-  --rule-strong: #7f978c;
-  --notary: #4b3fa7;
-  --notary-ink: #ffffff;
-  --clean: #1c6b4a;
-  --cleared: #4b3fa7;
-  --seller: #a8321f;
-  --warn-bg: #f6e3dc;
-  --mock-bg: #14302b;
-  --mock-fg: #e9efe9;
-  --mock-field: #24443d;
-
-  /* Type: a 4:3 scale from a 17px base */
-  --font-display: "Fraunces Variable", Georgia, serif;
+  --canvas: #f3f3f3;
+  --surface: #fff;
+  --raised: #e8e8e8;
+  --foreground: #191919;
+  --muted: #595959;
+  --separator: #d0d0d0;
+  --strong-separator: #777;
+  --primary: #202020;
+  --primary-foreground: #fff;
+  --secondary: #e6e6e6;
+  --secondary-foreground: #202020;
+  --focus: #444;
+  --danger: #333;
+  --status: #e5e5e5;
+  --paper: var(--canvas);
+  --paper-raised: var(--surface);
+  --ink: var(--foreground);
+  --ink-soft: var(--muted);
+  --rule: var(--separator);
+  --rule-strong: var(--strong-separator);
+  --notary: var(--primary);
+  --notary-ink: var(--primary-foreground);
+  --clean: var(--foreground);
+  --cleared: var(--foreground);
+  --seller: var(--danger);
+  --warn-bg: var(--status);
+  --mock-bg: var(--canvas);
+  --mock-fg: var(--muted);
+  --mock-field: var(--surface);
+  --font-display: "Inter Variable", sans-serif;
   --font-body: "Inter Variable", system-ui, sans-serif;
-  --font-machine: "JetBrains Mono", ui-monospace, monospace;
-  --text-sm: 0.8125rem;
-  --text-base: 1.0625rem;
-  --text-lg: 1.4167rem;
-  --text-xl: 1.8889rem;
-  --text-2xl: 2.5185rem;
-  --text-3xl: clamp(2.5rem, 7vw, 4.4769rem);
-
-  /* Space */
+  --font-machine: "JetBrains Mono", monospace;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.75rem;
+  --text-xl: 2.25rem;
+  --text-2xl: 2.25rem;
+  --text-3xl: clamp(3rem, 7vw, 6.5rem);
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -38,48 +48,38 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --space-7: 3rem;
-  --space-8: 4.5rem;
-
+  --space-8: 4rem;
   --gutter: clamp(1rem, 4vw, 3rem);
-  --page: 72rem;
-  --measure: 38rem;
+  --page: 80rem;
+  --measure: 40rem;
   --target: 44px;
-
-  /* Shape: paper has square corners; only controls are softened */
-  --radius-control: 3px;
-  --lift: 0 1px 0 var(--rule), 0 10px 24px -18px rgb(20 48 43 / 0.45);
-
-  /* Motion */
-  --quick: 140ms;
-  --cut: 700ms;
+  --radius-control: 12px;
+  --radius-inset: 16px;
+  --radius-ticket: 20px;
+  --radius-scene: 24px;
+  --radius-pill: 99px;
+  --radius-panel: 28px;
+  --lift: 0 16px 0 -8px var(--raised);
+  --quick: 160ms;
+  --cut: 260ms;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --paper: #10241f;
-    --paper-raised: #17302a;
-    --ink: #e6efe7;
-    --ink-soft: #a5bbb1;
-    --rule: #2f4b43;
-    --rule-strong: #5c786e;
-    --notary: #a99ff0;
-    --notary-ink: #17123f;
-    --clean: #6fcf9f;
-    --cleared: #b6adf5;
-    --seller: #f29a84;
-    --warn-bg: #3b211a;
-    --mock-bg: #e6efe7;
-    --mock-fg: #10241f;
-    --mock-field: #cfdcd2;
-    --lift: 0 1px 0 var(--rule);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --quick: 0ms;
-    --cut: 0ms;
+    --canvas: #191919;
+    --surface: #252525;
+    --raised: #343434;
+    --foreground: #f5f5f5;
+    --muted: #bdbdbd;
+    --separator: #494949;
+    --strong-separator: #999;
+    --primary: #f5f5f5;
+    --primary-foreground: #191919;
+    --secondary: #393939;
+    --secondary-foreground: #fff;
+    --focus: #ddd;
+    --danger: #eee;
+    --status: #383838;
   }
 }

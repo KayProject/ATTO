@@ -10,7 +10,7 @@ export function Stamp({ rating }: { rating: Rating }) {
   const Icon = ICONS[rating];
   return (
     <span className={`stamp stamp-${rating}`}>
-      <Icon size={14} weight="bold" aria-hidden />
+      <Icon size={14} weight="fill" aria-hidden />
       {RATING_LABEL[rating]}
     </span>
   );
@@ -51,9 +51,22 @@ export function ReportSections({ report }: { report: Report }) {
       {SECTION_KEYS.map((key) => {
         const section = report.sections[key];
         return (
-          <section className="report-section" key={key} aria-label={section.title}>
-            <h3>{section.title}</h3>
-            <div>
+          <details
+            className="report-section"
+            key={`${report.fingerprint}:${key}`}
+            open={section.status === "unavailable" || section.lines.some((line) => line.rating === "NeedsSeller")}
+          >
+            <summary>
+              <span>{section.title}</span>
+              <span className="report-count">
+                {section.status === "unavailable"
+                  ? "Unavailable"
+                  : section.status === "none_found"
+                    ? "None found"
+                    : `${section.lines.length} ${section.lines.length === 1 ? "item" : "items"}`}
+              </span>
+            </summary>
+            <div className="report-body">
               {section.status === "none_found" ? <p className="soft">None found</p> : null}
               {section.status === "unavailable" ? <p className="ask-seller">Unavailable right now.</p> : null}
               {section.lines.map((line) => (
@@ -61,7 +74,7 @@ export function ReportSections({ report }: { report: Report }) {
               ))}
               {section.note ? <p className="small soft">{section.note}</p> : null}
             </div>
-          </section>
+          </details>
         );
       })}
     </div>
@@ -70,11 +83,14 @@ export function ReportSections({ report }: { report: Report }) {
 
 export function ReportProvenance({ report }: { report: Report }) {
   return (
-    <p className="small soft">
-      Built {formatDateTime(report.built_at)} from {report.sources.join(", ").replace(/\.$/, "")}. Report fingerprint{" "}
-      <code title={report.fingerprint}>{shortHash(report.fingerprint)}</code>
-      {report.final ? ". Final report, built after the seller lost control of the name." : "."}
-    </p>
+    <details className="report-source small soft">
+      <summary>Report source</summary>
+      <p>
+        Built {formatDateTime(report.built_at)} from {report.sources.join(", ").replace(/\.$/, "")}. Report fingerprint{" "}
+        <code title={report.fingerprint}>{shortHash(report.fingerprint)}</code>
+        {report.final ? ". Final report, built after the seller lost control of the name." : "."}
+      </p>
+    </details>
   );
 }
 
@@ -133,7 +149,7 @@ const LINE_COLOUR: Record<Rating, string> = {
   NeedsSeller: "var(--seller)",
 };
 
-/** The name as a parcel, with a line to everything it's tied to. Lines visibly break when cut. */
+/** Actual connections, including unread data and clearing progress. */
 export function Plat({ name, links, unread = false }: { name: string; links: PlatLink[]; unread?: boolean }) {
   const rows = Math.max(links.length + (unread ? 1 : 0), 1);
   const height = rows * ROW;

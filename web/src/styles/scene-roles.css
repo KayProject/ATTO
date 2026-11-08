@@ -1,0 +1,29 @@
+/* Scene colour roles. Neutral placeholders until the palette is chosen; scenes use only these names. */
+:root {
+  --ground: #efede8;
+  --ground-ink: #161616;
+  --sky: #2f2f33;
+  --sky-ink: #f7f7f5;
+  --night: #0e0e10;
+  --night-ink: #f2f2f0;
+  --highlight: #d9d4c7;
+  --highlight-ink: #161616;
+  --cord-clears: #f2f2f0;
+  --cord-seller: #b9b2a2;
+  --cord-unread: #8a8a8a;
+  --alarm: #c9c9c9;
+  --glass-tint: #ffffff;
+  --faint-ink: color-mix(in srgb, currentColor 22%, transparent);
+  --scene-gutter: max(16px, 4vw);
+  --display-xl: clamp(3rem, 9vw, 9rem);
+  --display-lg: clamp(2.5rem, 6.5vw, 6rem);
+  --display-md: clamp(2rem, 4vw, 3.5rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #17171a;
+    --ground-ink: #f2f2f0;
+    --highlight: #3a3832;
+    --highlight-ink: #f2f2f0;
+  }
+}
