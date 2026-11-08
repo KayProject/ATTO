@@ -1,17 +1,17 @@
-/* Scene colour roles. Neutral placeholders until the palette is chosen; scenes use only these names. */
+/* Scene colour roles from the palette: Paper, Stone, Coral, Black. Scenes use only these names. */
 :root {
-  --ground: #efede8;
-  --ground-ink: #161616;
-  --sky: #2f2f33;
-  --sky-ink: #f7f7f5;
-  --night: #0e0e10;
-  --night-ink: #f2f2f0;
-  --highlight: #d9d4c7;
-  --highlight-ink: #161616;
-  --cord-clears: #f2f2f0;
-  --cord-seller: #b9b2a2;
-  --cord-unread: #8a8a8a;
-  --alarm: #c9c9c9;
+  --ground: #f6f4f1;
+  --ground-ink: #000000;
+  --sky: #e4ded2;
+  --sky-ink: #000000;
+  --night: #000000;
+  --night-ink: #f6f4f1;
+  --highlight: #f95c4b;
+  --highlight-ink: #000000;
+  --cord-clears: #f95c4b;
+  --cord-seller: #000000;
+  --cord-unread: #9a9389;
+  --alarm: #f95c4b;
   --glass-tint: #ffffff;
   --faint-ink: color-mix(in srgb, currentColor 22%, transparent);
   --scene-gutter: max(16px, 4vw);
@@ -21,9 +21,10 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ground: #17171a;
-    --ground-ink: #f2f2f0;
-    --highlight: #3a3832;
-    --highlight-ink: #f2f2f0;
+    --ground: #000000;
+    --ground-ink: #f6f4f1;
+    --sky: #2a2723;
+    --sky-ink: #f6f4f1;
+    --cord-seller: #f6f4f1;
   }
 }
