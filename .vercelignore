@@ -1,0 +1,7 @@
+target
+**/target
+contracts
+tests
+workbench
+docs
+*.sqlite*
