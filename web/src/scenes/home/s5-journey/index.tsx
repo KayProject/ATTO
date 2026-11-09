@@ -83,7 +83,7 @@ export function JourneyScene() {
       // Walk frames advance only while someone is moving.
       const walking = (t: number) => t < 1 || (t > 5 && t < 5.6);
       const tl = gsap.timeline({
-        scrollTrigger: { trigger: scope, start: "top top", end: "+=520%", pin: true, pinType: "transform", scrub: SCRUB, invalidateOnRefresh: true },
+        scrollTrigger: { trigger: scope, start: "top top", end: "+=520%", pin: true, anticipatePin: 1, scrub: SCRUB, invalidateOnRefresh: true },
         defaults: { ease: EASE.scrub },
         onUpdate: () => {
           const t = tl.time();

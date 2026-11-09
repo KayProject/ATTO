@@ -1,8 +1,8 @@
-// The giant atto. wordmark closing every page: drawn stroke by stroke as the footer scrolls in, fading into the ground.
+// The giant atto. wordmark closing every page: drawn stroke by stroke when the footer comes into view, fading out.
 "use client";
 import { useRef } from "react";
 import { Logo } from "@/components/brand/logo";
-import { gsap } from "@/motion/gsap";
+import { gsap, ScrollTrigger } from "@/motion/gsap";
 import { useScene } from "@/motion/use-scene";
 
 export function FooterMark() {
@@ -13,11 +13,13 @@ export function FooterMark() {
     // Each stroke has pathLength 1, so a dash of 1 hides it and an offset of 0 draws it fully.
     gsap.set(strokes, { attr: { "stroke-dasharray": "1 1", "stroke-dashoffset": 1 } });
     gsap.set(dot, { y: -160, autoAlpha: 0, transformOrigin: "50% 50%" });
+    // Plays once the footer comes into view, so it always finishes, even on pages too short to scroll far.
     const tl = gsap.timeline({
-      scrollTrigger: { trigger: scope, start: "top bottom", end: "bottom bottom", scrub: 0.8 },
+      paused: true,
       defaults: { ease: "power1.inOut" },
     });
-    strokes.forEach((s, i) => tl.to(s, { attr: { "stroke-dashoffset": 0 }, duration: 0.5 }, i * 0.28));
+    ScrollTrigger.create({ trigger: scope, start: "top 92%", once: true, onEnter: () => tl.play() });
+    strokes.forEach((s, i) => tl.to(s, { attr: { "stroke-dashoffset": 0 }, duration: 0.6 }, i * 0.32));
     tl.to(dot, { y: 0, autoAlpha: 1, duration: 0.4, ease: "bounce.out" }, ">-0.1")
       // Fully drawn, the strokes drop their dashes so the closed o has no seam.
       .set(strokes, { attr: { "stroke-dasharray": "none" } });

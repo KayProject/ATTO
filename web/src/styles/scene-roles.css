@@ -21,6 +21,8 @@
   --font-display: "Outfit Variable", "DM Sans Variable", system-ui, sans-serif;
   --font-body: "DM Sans Variable", system-ui, sans-serif;
 }
+/* Nothing may scroll the page sideways; scenes that fly things in from off-screen still clip themselves. */
+html, body { overflow-x: clip; }
 body { font-family: var(--font-body); }
 h1, h2, h3 { font-family: var(--font-display); font-optical-sizing: auto; }
 /* The scenes are drawn on Paper and Stone, with Black as its own scene, so they keep one palette in both

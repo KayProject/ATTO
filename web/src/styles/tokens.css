@@ -3,20 +3,20 @@
    Spacing: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64px. */
 :root {
   color-scheme: light;
-  --canvas: #f3f3f3;
-  --surface: #fff;
-  --raised: #e8e8e8;
-  --foreground: #191919;
-  --muted: #595959;
-  --separator: #d0d0d0;
-  --strong-separator: #777;
-  --primary: #202020;
-  --primary-foreground: #fff;
-  --secondary: #e6e6e6;
-  --secondary-foreground: #202020;
-  --focus: #444;
-  --danger: #333;
-  --status: #e5e5e5;
+  --canvas: #f6f4f1;
+  --surface: #fffdf9;
+  --raised: #e4ded2;
+  --foreground: #000000;
+  --muted: #5c564e;
+  --separator: #dcd5c8;
+  --strong-separator: #8c8579;
+  --primary: #000000;
+  --primary-foreground: #f6f4f1;
+  --secondary: #e4ded2;
+  --secondary-foreground: #000000;
+  --focus: #000000;
+  --danger: #c8402f;
+  --status: #efe9df;
   --paper: var(--canvas);
   --paper-raised: var(--surface);
   --ink: var(--foreground);
@@ -32,8 +32,8 @@
   --mock-bg: var(--canvas);
   --mock-fg: var(--muted);
   --mock-field: var(--surface);
-  --font-display: "Inter Variable", sans-serif;
-  --font-body: "Inter Variable", system-ui, sans-serif;
+  --font-display: "Outfit Variable", "DM Sans Variable", system-ui, sans-serif;
+  --font-body: "DM Sans Variable", system-ui, sans-serif;
   --font-machine: "JetBrains Mono", monospace;
   --text-sm: 0.875rem;
   --text-base: 1rem;
@@ -64,22 +64,4 @@
   --cut: 260ms;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --canvas: #191919;
-    --surface: #252525;
-    --raised: #343434;
-    --foreground: #f5f5f5;
-    --muted: #bdbdbd;
-    --separator: #494949;
-    --strong-separator: #999;
-    --primary: #f5f5f5;
-    --primary-foreground: #191919;
-    --secondary: #393939;
-    --secondary-foreground: #fff;
-    --focus: #ddd;
-    --danger: #eee;
-    --status: #383838;
-  }
-}
+/* One palette everywhere: Paper, Stone, Coral and Black, in light and dark system themes alike. */

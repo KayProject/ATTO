@@ -52,7 +52,7 @@ export function CheckNightScene() {
         scrollTrigger: { trigger: scope, start: "top bottom", end: "top top", scrub: SCRUB } });
       const cards = Array.from(scope.querySelectorAll<HTMLElement>(".check-answer"));
       const heading = scope.querySelector("h2");
-      const timeline = gsap.timeline({ scrollTrigger: { trigger: scope, start: "top top", end: "+=210%", pin: true, pinType: "transform", scrub: SCRUB, invalidateOnRefresh: true } });
+      const timeline = gsap.timeline({ scrollTrigger: { trigger: scope, start: "top top", end: "+=210%", pin: true, anticipatePin: 1, scrub: SCRUB, invalidateOnRefresh: true } });
       timeline.from(heading, { y: 80, filter: "blur(16px)", autoAlpha: 0, duration: 0.5, ease: EASE.enter }, 0)
         .from(scope.querySelector(".check-arch"), { y: 120, scale: 0.85, autoAlpha: 0, duration: 0.6, ease: EASE.enter }, 0)
         .from(scope.querySelector(".check-sub"), { autoAlpha: 0, y: 20, duration: 0.3 }, 0.35)

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import "@fontsource-variable/inter";
 import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/outfit";
 import "@fontsource/jetbrains-mono/400.css";

@@ -42,6 +42,14 @@ describe("the drawing's cut lines", () => {
   });
 });
 
+/** Whether the section with this title renders open. */
+function isOpen(html: string, title: string) {
+  return html
+    .split("<details")
+    .slice(1)
+    .some((chunk) => chunk.startsWith(' class="report-section" open=""') && chunk.split("</summary>")[0].includes(title));
+}
+
 describe("report disclosure", () => {
   it("keeps every category and seller instruction available, with risky categories open", () => {
     const report = new World().getReport("bakery.food")!;
@@ -54,7 +62,7 @@ describe("report disclosure", () => {
         if (line.ask_seller) expect(html).toContain(line.ask_seller.replaceAll("'", "&#x27;"));
       }
       if (section.lines.some((line) => line.rating === "NeedsSeller")) {
-        expect(html).toContain(`<details class="report-section" open=""><summary><span>${section.title}</span>`);
+        expect(isOpen(html, section.title)).toBe(true);
       }
     }
   });
@@ -67,7 +75,7 @@ describe("report disclosure", () => {
       note: "The reader did not respond.",
     };
     const html = renderToStaticMarkup(createElement(ReportSections, { report }));
-    expect(html).toContain('<details class="report-section" open=""><summary><span>NFT evidence</span>');
+    expect(isOpen(html, "NFT evidence")).toBe(true);
     expect(html).toContain("Unavailable right now.");
     expect(html).toContain("The reader did not respond.");
     expect(html).toContain("None found");

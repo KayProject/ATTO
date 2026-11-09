@@ -39,7 +39,7 @@ export function VerbsScene() {
         scrollTrigger: { trigger: scope, start: "top bottom", end: "top top", scrub: SCRUB },
       });
       const timeline = gsap.timeline({
-        scrollTrigger: { trigger: scope, start: "top top", end: "+=260%", pin: true, pinType: "transform", scrub: SCRUB, invalidateOnRefresh: true },
+        scrollTrigger: { trigger: scope, start: "top top", end: "+=260%", pin: true, anticipatePin: 1, scrub: SCRUB, invalidateOnRefresh: true },
         onUpdate: () => {
           const t = timeline.time();
           show(Math.min(3, Math.floor(t)));

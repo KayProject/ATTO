@@ -99,7 +99,14 @@ export function HeroScene() {
         fars[i].forEach((p) => p.setAttribute("d", far));
       });
     };
-    gsap.ticker.add(draw);
+    // Redraw only while the hero is on screen; past it, the loop would cost frames in every other scene.
+    const onScreen = ScrollTrigger.create({
+      trigger: scope,
+      start: "top bottom",
+      end: "bottom top",
+      onToggle: (self) => (self.isActive ? gsap.ticker.add(draw) : gsap.ticker.remove(draw)),
+    });
+    if (onScreen.isActive) gsap.ticker.add(draw);
 
     // Entrance as the preloader opens.
     const title = q(".hero-title");
@@ -176,6 +183,7 @@ export function HeroScene() {
 
     return () => {
       gsap.ticker.remove(draw);
+      onScreen.kill();
       stage.removeEventListener("pointermove", onMove);
       stopWaiting();
       float?.kill();
@@ -266,7 +274,7 @@ export function HeroScene() {
               </defs>
               {CORDS.map((spec, i) => (
                 <g key={spec.id} className={`gh-cord cord-${spec.kind}`} data-cord={spec.id}>
-                  {(["glow", "body", "shine"] as const).map((layer) => (
+                  {(["halo", "glow", "body", "shine"] as const).map((layer) => (
                     <g key={layer} className={`gh-cord-${layer}`}>
                       <path className="gh-cord-near" d={REST[i].near} />
                       <path className="gh-cord-far" d={REST[i].far} />

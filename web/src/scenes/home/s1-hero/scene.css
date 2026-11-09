@@ -124,18 +124,20 @@
 }
 .gh-cords { inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 15; }
 .gh-cords path { fill: none; stroke-linecap: round; }
-.gh-cord-glow path { stroke-width: 16; opacity: 0.35; filter: url(#gh-glow); }
+/* The glow is stacked translucent strokes, not a blur filter: the cords are redrawn every frame, and a blur
+   would be recomputed with them, which is what made the hero stutter. */
+.gh-cord-halo path { stroke-width: 26; opacity: 0.07; }
+.gh-cord-glow path { stroke-width: 14; opacity: 0.2; }
 .gh-cord-body path { stroke-width: 7; }
 .gh-cord-shine path { stroke-width: 1.6; stroke: rgb(255 255 255 / 0.8); transform: translate(-1.5px, -1.5px); }
-.cord-clears .gh-cord-glow path { stroke: var(--highlight); }
+.cord-clears .gh-cord-glow path, .cord-clears .gh-cord-halo path { stroke: var(--highlight); }
 .cord-clears .gh-cord-body path { stroke: url(#gh-cord-coral); }
-.cord-seller .gh-cord-glow path { stroke: var(--highlight); opacity: 0.18; }
+.cord-seller .gh-cord-glow path, .cord-seller .gh-cord-halo path { stroke: var(--highlight); opacity: 0.08; }
 .cord-seller .gh-cord-body path { stroke: var(--ground-ink); }
 .cord-seller .gh-cord-shine path { stroke: rgb(249 92 75 / 0.75); }
 /* Knots where each cord is tied through a hole or ring: 3D volume, glow, specular shine, and contact shadow. */
-.gh-knot { filter: drop-shadow(0 2px 5px rgb(0 0 0 / 0.3)); }
 .gh-knot path { fill: none; stroke-linecap: round; }
-.gh-knot-glow path { stroke-width: 14; opacity: 0.3; filter: url(#gh-glow); stroke: var(--highlight); }
+.gh-knot-glow path { stroke-width: 14; opacity: 0.18; stroke: var(--highlight); }
 .cord-seller .gh-knot-glow path { opacity: 0.12; }
 .cord-clears .gh-knot-body path { stroke: url(#gh-cord-coral); stroke-width: 6; }
 .cord-clears .gh-knot-body .gh-knot-bead { fill: #f95c4b; }

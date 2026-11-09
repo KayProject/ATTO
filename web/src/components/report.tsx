@@ -6,6 +6,16 @@ import { formatDateTime, shortHash } from "@/lib/atto/format";
 
 const ICONS = { Clean: CheckCircle, WillBeCleared: Scissors, NeedsSeller: Warning };
 
+// The glass object each carried item has on the home page, so the report and the home speak one visual language.
+const SECTION_GLASS: Partial<Record<(typeof SECTION_KEYS)[number], string>> = {
+  intents_keys: "key",
+  nfts: "nft-frame",
+  intents_balances: "coin",
+  dao_roles: "seal",
+  sub_accounts: "subaccount-tag",
+  intents_mode: "mode-switch",
+};
+
 export function Stamp({ rating }: { rating: Rating }) {
   const Icon = ICONS[rating];
   return (
@@ -57,7 +67,13 @@ export function ReportSections({ report }: { report: Report }) {
             open={section.status === "unavailable" || section.lines.some((line) => line.rating === "NeedsSeller")}
           >
             <summary>
-              <span>{section.title}</span>
+              <span className="report-title">
+                <span className="report-glass" aria-hidden="true">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- small pre-sized WebP */}
+                  {SECTION_GLASS[key] ? <img src={`/glass/${SECTION_GLASS[key]}.webp`} alt="" draggable={false} /> : null}
+                </span>
+                {section.title}
+              </span>
               <span className="report-count">
                 {section.status === "unavailable"
                   ? "Unavailable"
