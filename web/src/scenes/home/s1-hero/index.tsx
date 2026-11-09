@@ -1,7 +1,7 @@
-// Home scene: the glass name tag tied to what the old owner still holds; scrolling cuts the cords ATTO can clear.
+// Home scene: the glass name tag tied to what the previous owner still holds; scrolling cuts the cords ATTO clears.
 /* eslint-disable @next/next/no-img-element -- pre-sized WebP layers that GSAP moves directly */
 "use client";
-import { useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { PillButton } from "@/components/ui/pill-button";
 import { gsap, ScrollTrigger, SplitText } from "@/motion/gsap";
@@ -11,19 +11,10 @@ import { DEMO_NAME, useDemoReport } from "../use-demo-report";
 import { whenPreloaderDone } from "../s0-preloader/signal";
 import { heroCounts } from "../s3-leftovers/leftovers";
 import { cordPaths, cutPoint, type CordState } from "./cords";
-import { BOX, CARDS, CORDS, OBJECTS, PEOPLE, TAG, pct } from "./layout";
+import { knot } from "../glass-rig";
+import { BOX, CARDS, CORDS, JOINT, OBJECT_LAYER, OBJECTS, PEOPLE, TAG, TAG_LAYER, TIE_R, origin, pct } from "./layout";
 
-const IMG = (name: string) => `/glass/${name}.webp`;
-
-// People can be shown as glass or pencil drawings; ?people=pencil picks the drawings.
-const noSubscribe = () => () => {};
-function usePeopleSet(): "glass" | "pencil" {
-  return useSyncExternalStore(
-    noSubscribe,
-    () => (new URLSearchParams(window.location.search).get("people") === "pencil" ? "pencil" : "glass"),
-    () => "glass",
-  );
-}
+import { GLASS as IMG, PENCIL as PERSON } from "../assets";
 
 function plural(count: number, one: string, many: string) {
   return count === 1 ? one : many;
@@ -36,8 +27,6 @@ export function HeroScene() {
   const ref = useRef<HTMLElement>(null);
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const peopleSet = usePeopleSet();
-  const PERSON = (name: string) => `/${peopleSet}/${name}.webp`;
   const { data: report, error } = useDemoReport();
   const counts = report ? heroCounts(report) : null;
 
@@ -58,10 +47,52 @@ export function HeroScene() {
     const states: CordState[] = CORDS.map(() => ({ t: 0, cut: 0, fall: { x: 0, y: 0 } }));
     const nears = CORDS.map((c) => all(`[data-cord="${c.id}"] .gh-cord-near`));
     const fars = CORDS.map((c) => all(`[data-cord="${c.id}"] .gh-cord-far`));
+    // Cord ends follow the tag's float and each object's bob, so they never leave their hole or ring.
+    const tagCentre = { x: TAG_LAYER.x + TAG_LAYER.w / 2, y: TAG_LAYER.y + TAG_LAYER.h / 2 };
+    const bobs = CORDS.map((c) => q(`[data-object="${c.id}"] .gh-object-bob`));
+    const boxScale = () => box.clientWidth / BOX.w || 1;
+    const turn = (p: { x: number; y: number }, c: { x: number; y: number }, deg: number, dy: number) => {
+      const r = (deg * Math.PI) / 180;
+      const dx = p.x - c.x;
+      const dyy = p.y - c.y;
+      return { x: c.x + dx * Math.cos(r) - dyy * Math.sin(r), y: c.y + dx * Math.sin(r) + dyy * Math.cos(r) + dy };
+    };
+    const knots = CORDS.map((c) =>
+      [0, 1].map((e) => {
+        const g = q(`[data-cord="${c.id}"] [data-knot="${e}"]`);
+        return {
+          loops: Array.from(g.querySelectorAll<SVGPathElement>(".gh-knot-loop")),
+          tails: Array.from(g.querySelectorAll<SVGPathElement>(".gh-knot-tail")),
+          beads: Array.from(g.querySelectorAll<SVGCircleElement>(".gh-knot-bead")),
+        };
+      }),
+    );
     const draw = (time: number) => {
+      const k = boxScale();
+      const tagTurn = (gsap.getProperty(tag, "rotation") as number) - TAG.rotate!;
+      const tagLift = (gsap.getProperty(tag, "y") as number) / k;
       CORDS.forEach((spec, i) => {
         states[i].t = time;
-        const { near, far } = cordPaths(spec, states[i], i * 1.7);
+        const obj = OBJECT_LAYER[spec.id as keyof typeof OBJECT_LAYER];
+        const objCentre = { x: obj.x + obj.w / 2, y: obj.y + obj.h / 2 };
+        const from = turn(spec.from, tagCentre, tagTurn, tagLift);
+        const to = turn(spec.to, objCentre, gsap.getProperty(bobs[i], "rotation") as number, (gsap.getProperty(bobs[i], "y") as number) / k);
+        const shift = { x: (from.x - spec.from.x + to.x - spec.to.x) / 2, y: (from.y - spec.from.y + to.y - spec.to.y) / 2 };
+        const live = { ...spec, from, to, control: spec.control && { x: spec.control.x + shift.x, y: spec.control.y + shift.y } };
+        const { near, far } = cordPaths(live, states[i], i * 1.7);
+        // Knots: tied through the tag hole, and through the object's ring (which falls with the object once cut).
+        const ctrl = live.control ?? { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 + spec.sag };
+        const fallen = { x: to.x + states[i].fall.x, y: to.y + states[i].fall.y };
+        const t = TIE_R[spec.id];
+        const ends = [knot(from, ctrl, t.from, 2, t.fromRim), knot(fallen, ctrl, t.to, 2, t.toRim)];
+        ends.forEach((k, e) => {
+          knots[i][e].loops.forEach((p) => p.setAttribute("d", k.loop));
+          knots[i][e].tails.forEach((p) => p.setAttribute("d", k.tail));
+          knots[i][e].beads.forEach((b, bi) => {
+            b.setAttribute("cx", String(bi === 1 ? k.bead.x - 1 : k.bead.x));
+            b.setAttribute("cy", String(bi === 1 ? k.bead.y - 1 : k.bead.y));
+          });
+        });
         nears[i].forEach((p) => p.setAttribute("d", near));
         fars[i].forEach((p) => p.setAttribute("d", far));
       });
@@ -77,13 +108,20 @@ export function HeroScene() {
       .from(tag, { y: 80, rotate: -24, autoAlpha: 0, duration: 1.2, ease: EASE.enter }, 0.1)
       .from(all(".gh-object"), { y: -60, autoAlpha: 0, duration: 0.9, ease: EASE.settle, stagger: 0.1 }, 0.4)
       .from(all(".gh-cord"), { autoAlpha: 0, duration: 0.6 }, 0.5)
-      .from(all(".gh-person"), { y: 60, autoAlpha: 0, duration: 0.9, ease: EASE.enter, stagger: 0.12 }, 0.5)
+      // Each person's drawings rise together. The rise moves the images, not their layers: the wrappers stay untransformed
+      // so every part joins the box's layer stack, and limb rotations never share a transform with the rise.
+      .from(all(".gh-figure-woman img"), { y: 60, autoAlpha: 0, duration: 0.9, ease: EASE.enter }, 0.5)
+      .from(all(".gh-figure-man img"), { y: 60, autoAlpha: 0, duration: 0.9, ease: EASE.enter }, 0.62)
       .from(all(".gh-card"), { scale: 0.85, autoAlpha: 0, duration: 0.7, ease: EASE.settle, stagger: 0.12 }, 0.9)
       .from(all(".hero-rise"), { y: 24, autoAlpha: 0, duration: DURATION.enter, ease: EASE.enter, stagger: 0.1 }, 0.6);
     const stopWaiting = whenPreloaderDone(() => intro.play());
 
     // Idle life: the tag floats, objects bob, cards drift, light sweeps across the glass, the man tugs his cord.
-    gsap.to(tag, { y: -10, rotate: TAG.rotate! + 1.2, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: -1 });
+    // The float starts once the entrance has settled, so it swings around the resting pose and nowhere else.
+    let float: gsap.core.Tween | null = null;
+    intro.eventCallback("onComplete", () => {
+      float = gsap.fromTo(tag, { y: 0, rotate: TAG.rotate! }, { y: -6, rotate: TAG.rotate! + 0.6, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: -1 });
+    });
     all(".gh-object-bob").forEach((el, i) =>
       gsap.to(el, { y: 8, rotate: i % 2 ? 4 : -4, duration: 2.4 + i * 0.4, ease: "sine.inOut", yoyo: true, repeat: -1 }),
     );
@@ -95,7 +133,7 @@ export function HeroScene() {
       { "--shine": "-40%" },
       { "--shine": "140%", duration: 1.6, ease: "power2.inOut", repeat: -1, repeatDelay: 3.4, stagger: 0.25 },
     );
-    gsap.to(q(".gh-man-arms"), { rotate: -3, duration: 1.4, ease: "sine.inOut", yoyo: true, repeat: -1 });
+    gsap.to(all(".gh-man-arm"), { rotate: -2.5, duration: 1.4, ease: "sine.inOut", yoyo: true, repeat: -1 });
 
     // Pointer tilt: the glass leans toward the cursor.
     const tiltX = gsap.quickTo(box, "rotateY", { duration: 0.8, ease: "power3.out" });
@@ -119,8 +157,8 @@ export function HeroScene() {
       defaults: { ease: EASE.scrub },
     });
     story
-      .fromTo(q(".gh-woman-arm"), { rotate: -18 }, { rotate: 0, duration: 0.16 }, 0.06)
-      .to(q(".gh-woman-arm"), { rotate: 4, duration: 0.04 }, 0.22);
+      .fromTo(q(".gh-woman-arm"), { rotate: 0 }, { rotate: 3, duration: 0.04 }, 0.2)
+      .to(q(".gh-woman-arm"), { rotate: 0, duration: 0.05 }, 0.25);
     fall(0, q('[data-object="key"]'), 0.24, story);
     fall(1, q('[data-object="frame"]'), 0.36, story);
     story
@@ -138,6 +176,7 @@ export function HeroScene() {
       gsap.ticker.remove(draw);
       stage.removeEventListener("pointermove", onMove);
       stopWaiting();
+      float?.kill();
       intro.kill();
       split.revert();
     };
@@ -162,10 +201,13 @@ export function HeroScene() {
 
         <div className="hero-copy">
           <h1 id="hero-title" className="hero-title">
-            What still holds this name?
+            A safer way to buy and sell NEAR names.
           </h1>
           <div className="hero-fade">
-            <p className="hero-sub hero-rise">Names keep their old owner&apos;s keys. ATTO finds them.</p>
+            <p className="hero-sub hero-rise">
+              ATTO holds the payment, transfers the name, and removes the previous owner&apos;s access before the sale
+              completes.
+            </p>
             <form role="search" className="hero-search hero-rise" onSubmit={submit}>
               <label className="sr-only" htmlFor="hero-name">
                 NEAR name
@@ -216,6 +258,23 @@ export function HeroScene() {
                       <path className="gh-cord-far" d={REST[i].far} />
                     </g>
                   ))}
+                  {[0, 1].map((e) => (
+                    <g key={e} className="gh-knot" data-knot={e}>
+                      <g className="gh-knot-glow">
+                        <path className="gh-knot-loop" />
+                      </g>
+                      <g className="gh-knot-body">
+                        <path className="gh-knot-loop" />
+                        <path className="gh-knot-tail" />
+                        <circle className="gh-knot-bead" r="5" />
+                      </g>
+                      <g className="gh-knot-shine">
+                        <path className="gh-knot-loop" />
+                        <path className="gh-knot-tail" />
+                        <circle className="gh-knot-bead" r="2.2" />
+                      </g>
+                    </g>
+                  ))}
                   <circle
                     className="gh-flash"
                     data-flash={spec.id}
@@ -235,17 +294,24 @@ export function HeroScene() {
               </div>
             ))}
 
-            <div className="gh-person" style={pct(PEOPLE.woman)}>
-              <img src={PERSON("woman-body")} alt="" draggable={false} />
+            <div className="gh-figure gh-figure-woman">
+              <div className="gh-person gh-woman-arm" style={{ ...pct(PEOPLE.womanArm), transformOrigin: origin(JOINT.armShoulder) }}>
+                <img src={PERSON("woman-arm-scissors")} alt="" draggable={false} />
+              </div>
+              <div className="gh-person gh-woman-body" style={pct(PEOPLE.woman)}>
+                <img src={PERSON("woman-body")} alt="" draggable={false} />
+              </div>
             </div>
-            <div className="gh-person gh-woman-arm" style={pct(PEOPLE.womanArm)}>
-              <img src={PERSON("woman-arm-scissors")} alt="" draggable={false} />
-            </div>
-            <div className="gh-person gh-man-arms" style={pct(PEOPLE.manArms)}>
+            <div className="gh-figure gh-figure-man">
+            <div className="gh-person gh-man-arm gh-man-arm-far" style={{ ...pct(PEOPLE.manArmFar), transformOrigin: origin(JOINT.farArmShoulder) }}>
               <img src={PERSON("man-arms")} alt="" draggable={false} />
             </div>
-            <div className="gh-person" style={pct(PEOPLE.man)}>
+            <div className="gh-person gh-man-body" style={pct(PEOPLE.man)}>
               <img src={PERSON("man-body")} alt="" draggable={false} />
+            </div>
+            <div className="gh-person gh-man-arm gh-man-arm-near" style={{ ...pct(PEOPLE.manArmNear), transformOrigin: origin(JOINT.nearArmShoulder) }}>
+              <img src={PERSON("man-arms")} alt="" draggable={false} />
+            </div>
             </div>
 
             {card(
@@ -254,7 +320,7 @@ export function HeroScene() {
                 <strong>{counts?.keys ?? "–"}</strong> {plural(counts?.keys ?? 1, "Intents key", "Intents keys")}
               </>,
               <>
-                <strong>Cut</strong> in a Clean Sale
+                <strong>Removed</strong> in the sale
               </>,
             )}
             {card(
@@ -263,13 +329,13 @@ export function HeroScene() {
                 <strong>{counts?.nfts ?? "–"}</strong> {plural(counts?.nfts ?? 1, "NFT approval", "NFT approvals")}
               </>,
               <>
-                <strong>Cut</strong> in a Clean Sale
+                <strong>Removed</strong> in the sale
               </>,
             )}
             {card(
               "seller",
               <>
-                <strong>{counts?.seller ?? "–"}</strong> {plural(counts?.seller ?? 1, "needs the seller", "need the seller")}
+                <strong>{counts?.seller ?? "–"}</strong> {plural(counts?.seller ?? 1, "for the seller", "for the seller")}
               </>,
             )}
           </div>

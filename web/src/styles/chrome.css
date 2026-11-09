@@ -55,6 +55,10 @@ body main { padding-top: 96px; }
   font-size: 0.8rem;
 }
 .mockbar .frame { width: auto; padding: 8px 14px; }
+body:has(.consent) .mockbar { bottom: 84px; }
+.mockbar, .mockbar a { color: var(--ground-ink); }
+/* The landing page shows a labelled example report, so the demo switcher stays on the product screens. */
+body:has(.home-journey) .mockbar { display: none; }
 @media (max-width: 52rem) {
   .site-header .site-nav { display: none; }
   .site-header .menu-button { margin-left: auto; }

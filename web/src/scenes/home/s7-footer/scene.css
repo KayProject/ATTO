@@ -1,15 +1,19 @@
-.scene-footer { position: relative; isolation: isolate; min-height: 46rem; height: 100svh; overflow: clip; background: var(--night); color: var(--ground-ink); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 18rem var(--scene-gutter) 3rem; }
-.footer-dome { position: absolute; z-index: -1; top: 46%; left: -25%; width: 150%; height: 110%; border-radius: 50% 50% 0 0 / 40% 40% 0 0; background: var(--ground); }
-.footer-cast { position: absolute; bottom: calc(54% - 1.25rem); display: flex; align-items: flex-end; gap: clamp(0.5rem, 2vw, 1.5rem); }
-.footer-cast .cast { margin-bottom: 0.75rem; }
-.footer-dome-copy { position: relative; display: grid; justify-items: center; gap: 3rem; }
-.footer-dome-copy h2 { font-size: var(--display-xl); text-align: center; letter-spacing: -0.065em; }
+/* Footer dome: Paper rises out of the night with the crowd on its edge; the closing line sits on the dome. */
+.scene-footer { position: relative; isolation: isolate; min-height: 44rem; height: 100svh; overflow: clip; background: var(--night); color: var(--ground-ink); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 var(--scene-gutter) clamp(3rem, 8vh, 5rem); }
+.footer-dome { position: absolute; z-index: -1; top: 50%; left: -25%; width: 150%; height: 110%; border-radius: 50% 50% 0 0 / 40% 40% 0 0; background: var(--ground); }
+.footer-cast { position: absolute; top: calc(50% - clamp(110px, 17vh, 170px) + 1.5rem); left: 50%; translate: -50% 0; display: flex; align-items: flex-end; gap: clamp(0.25rem, 1.5vw, 1.25rem); height: clamp(110px, 17vh, 170px); }
+.footer-cast img { display: block; height: 100%; width: auto; }
+.footer-crowd { height: 100% !important; }
+.footer-person { height: 112% !important; }
+.footer-prop { height: 40% !important; align-self: center; }
+.footer-buyer { transform: scaleX(-1); }
+.footer-dome-copy { position: relative; display: grid; justify-items: center; gap: 2.5rem; }
+.footer-dome-copy h2 { max-width: 16ch; font-size: clamp(2.5rem, 5.4vw, 5.25rem); line-height: 1; text-align: center; letter-spacing: -0.045em; text-wrap: balance; }
 .footer-dome-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
 @media (max-width: 47.99rem) {
-  .scene-footer { min-height: 36rem; height: 80svh; padding-block: 8rem 6rem; }
-  .footer-cast { transform: scale(0.6); transform-origin: bottom center; }
-  .footer-cast .cast { display: none; }
+  .scene-footer { min-height: 40rem; height: 92svh; }
+  .footer-cast { top: calc(50% - 90px + 1rem); height: 90px; }
+  .footer-prop { display: none; }
   .footer-dome-copy { gap: 2rem; }
-  .footer-dome-copy h2 { max-width: 6ch; }
   .footer-dome-actions { flex-direction: column; align-items: center; }
 }

@@ -23,12 +23,6 @@
 }
 body { font-family: var(--font-body); }
 h1, h2, h3 { font-family: var(--font-display); font-optical-sizing: auto; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --ground: #000000;
-    --ground-ink: #f6f4f1;
-    --sky: #2a2723;
-    --sky-ink: #f6f4f1;
-    --cord-seller: #f6f4f1;
-  }
-}
+/* The scenes are drawn on Paper and Stone, with Black as its own scene, so they keep one palette in both
+   system themes; a dark system theme must not flip their ink to Paper over the light artwork. */
+.home-journey, .site-header, .mockbar, .site-footer { color-scheme: light; }

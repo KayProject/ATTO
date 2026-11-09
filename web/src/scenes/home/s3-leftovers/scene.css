@@ -1,4 +1,4 @@
-/* Leftovers: six ticket cards on the ground, each risen from a coloured frame; the corner tag answers. */
+/* Leftovers: six album posters on the wall; the open one lifts out under a picture light; the corner tag answers. */
 .scene-leftovers {
   position: relative;
   background: var(--ground);
@@ -14,100 +14,193 @@
   gap: 16px 48px;
   margin-bottom: clamp(32px, 6vh, 64px);
 }
-.leftovers-title { font-size: var(--display-lg); line-height: 0.95; letter-spacing: -0.045em; font-weight: 650; }
-.leftovers-note { max-width: 22ch; font-size: 0.95rem; opacity: 0.7; text-align: right; }
+.leftovers-title { max-width: 16ch; font-size: clamp(2.25rem, 4.6vw, 4.5rem); line-height: 1; letter-spacing: -0.04em; font-weight: 600; text-wrap: balance; }
+.leftovers-note { max-width: 40ch; font-size: 1rem; line-height: 1.5; opacity: 0.8; }
 
-.leftovers-body { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: clamp(24px, 4vw, 56px); align-items: start; }
+.leftovers-body { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: clamp(24px, 4vw, 56px); align-items: start; }
 .leftovers-grid {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(12px, 1.6vw, 20px);
+  grid-template-columns: repeat(3, minmax(0, 250px));
+  justify-content: center;
+  gap: clamp(20px, 3vw, 44px);
   align-items: start;
 }
 
-.leftover { position: relative; border-radius: 22px; }
-.leftover-frame {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  border-radius: 22px;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-.leftover-frame::after {
-  content: "";
-  position: absolute;
-  inset: 22%;
-  border-radius: 10px;
-  background: var(--ground);
-}
-.frame-0 .leftover-frame { background: var(--sky); }
-.frame-1 .leftover-frame { background: var(--highlight); }
-.frame-2 .leftover-frame { background: var(--night); }
-
-.leftover-face {
-  border-radius: 22px;
-  background: color-mix(in srgb, var(--ground-ink) 4%, var(--ground));
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--ground-ink) 8%, transparent),
-    0 18px 36px -28px color-mix(in srgb, var(--night) 60%, transparent);
-  transition: box-shadow 260ms, background-color 260ms;
-}
-.leftover[data-open] .leftover-face {
-  background: var(--ground);
-  box-shadow:
-    inset 0 0 0 2px var(--ground-ink),
-    0 28px 50px -30px color-mix(in srgb, var(--night) 70%, transparent);
-}
-.leftover-button {
-  display: grid;
-  gap: 10px;
+/* Posters: black frame, paper mat, square cover with the glass object, title, artist line, tracklist.
+   Every size is in cqi of the poster's own width, so the small and the open poster are one artwork at two scales. */
+.leftovers-wall { position: relative; }
+.poster-card { position: relative; }
+.poster-hang { will-change: transform; }
+.poster-frame {
+  position: relative;
+  display: block;
   width: 100%;
-  min-height: 44px;
-  padding: 18px 18px 16px;
+  container-type: inline-size;
+  aspect-ratio: 1 / 1.46;
+  padding: 0;
   border: 0;
-  border-radius: 22px;
-  background: transparent;
-  color: inherit;
+  border-radius: 0.6cqi;
+  background: #0b0b0b;
+  color: #0b0b0b;
   font: inherit;
   text-align: left;
   cursor: pointer;
+  box-shadow:
+    inset 0 0 0 0.4cqi rgb(255 255 255 / 0.1),
+    0 2.4cqi 5cqi -1.6cqi rgb(0 0 0 / 0.38),
+    0 0.6cqi 1.2cqi rgb(0 0 0 / 0.14);
+  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.leftover-button:focus-visible { outline: 2px solid var(--ground-ink); outline-offset: 3px; }
-.leftover-top { display: flex; align-items: start; justify-content: space-between; gap: 8px; margin-bottom: 18px; }
-.leftover-name { font-size: clamp(1.15rem, 1.6vw, 1.4rem); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
-.leftover-count { font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.75rem; opacity: 0.6; }
-.leftover-stamp {
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  transform: rotate(-3deg);
+.poster-frame.is-open { cursor: default; }
+.poster-card .poster-frame:hover { transform: translateY(-4px); }
+.poster-frame:focus-visible { outline: 2px solid var(--ground-ink); outline-offset: 4px; }
+.poster-mat {
+  position: absolute;
+  inset: 2.2cqi;
+  display: grid;
+  grid-template-rows: auto auto auto auto auto minmax(0, 1fr) auto;
+  padding: 6.5cqi 6.5cqi 3.6cqi;
+  background: #f8f6f2;
+  box-shadow: inset 0 0 0 0.25cqi rgb(0 0 0 / 0.08), inset 0 0.8cqi 1.6cqi -0.8cqi rgb(0 0 0 / 0.25);
+  overflow: hidden;
 }
-.stamp-clears { background: var(--highlight); color: var(--highlight-ink); }
-.stamp-seller { box-shadow: inset 0 0 0 1.5px var(--cord-seller); }
-.stamp-travels { box-shadow: inset 0 0 0 1px var(--faint-ink); transform: none; }
+.poster-cover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, #34302d 0%, #141211 58%, #060606 100%);
+}
+.poster-cover-glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 55%, rgb(249 92 75 / 0.34), transparent 58%); }
+.cover-seller .poster-cover-glow { background: radial-gradient(circle at 50% 55%, rgb(228 222 210 / 0.22), transparent 58%); }
+.cover-travels .poster-cover-glow { background: radial-gradient(circle at 50% 55%, rgb(246 244 241 / 0.3), transparent 60%); }
+.poster-object {
+  position: relative;
+  width: 64%;
+  height: 64%;
+  object-fit: contain;
+  filter: drop-shadow(0 3cqi 4cqi rgb(249 92 75 / 0.35)) saturate(1.08);
+  user-select: none;
+}
+.poster-head { display: flex; align-items: baseline; justify-content: space-between; gap: 3cqi; margin-top: 1.4cqi; }
+.poster-title { margin-top: 4.6cqi; font-family: var(--font-display); font-weight: 700; font-size: 7.6cqi; line-height: 1; letter-spacing: -0.035em; white-space: nowrap; }
+.poster-sign { flex: none; font-family: var(--font-mono, ui-monospace, monospace); font-size: 3.2cqi; opacity: 0.6; white-space: nowrap; }
+.poster-artist { white-space: nowrap; font-size: 4.4cqi; font-weight: 500; letter-spacing: -0.01em; }
+.poster-artist.stamp-clears { color: #c8402f; }
+.poster-rule { height: 0.45cqi; margin: 2.6cqi 0 2.4cqi; background: #0b0b0b; }
+.poster-tracks { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 4cqi; align-content: start; font-size: 2.55cqi; line-height: 1.4; }
+.poster-list, .poster-credits { display: grid; gap: 1.2cqi; align-content: start; }
+.poster-track-no { opacity: 0.55; }
+.poster-credit b { display: block; font-weight: 700; }
+.poster-mark { justify-self: center; font-family: var(--font-display); font-weight: 800; font-size: 3.2cqi; letter-spacing: -0.04em; }
+/* Glazing: the acrylic in front of the print. */
+.poster-glaze {
+  position: absolute;
+  inset: 2.2cqi;
+  pointer-events: none;
+  background:
+    linear-gradient(118deg, transparent 28%, rgb(255 255 255 / 0.22) 38%, transparent 47%),
+    linear-gradient(118deg, transparent 52%, rgb(255 255 255 / 0.08) 56%, transparent 61%);
+  mix-blend-mode: screen;
+}
 
-.leftover-more { display: grid; grid-template-rows: 0fr; }
-.leftover[data-open] .leftover-more { grid-template-rows: 1fr; }
-.leftover-more > div { overflow: hidden; }
-.leftover-more p { padding: 0 18px; font-size: 0.92rem; line-height: 1.4; }
-.leftover-more p:first-child { padding-top: 2px; }
-.leftover-more p:last-child { padding-bottom: 18px; margin-top: 6px; opacity: 0.75; }
+/* The open poster lifts off the wall; the lamp drops in above it and only then switches on. */
+.poster-open { position: absolute; inset: 0; z-index: 5; }
+.poster-room {
+  position: absolute;
+  inset: -15% -10%;
+  background: rgb(20 18 16 / 0.26);
+  mask-image: radial-gradient(closest-side, #000 55%, transparent);
+}
+.poster-open-frame {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: min(100%, 540px, calc((100svh - 190px) / 1.46));
+  container-type: inline-size;
+  will-change: transform;
+}
+.poster-open-frame .poster-frame { box-shadow: inset 0 0 0 0.4cqi rgb(255 255 255 / 0.1), 0 6cqi 10cqi -3cqi rgb(0 0 0 / 0.45), 0 1cqi 2cqi rgb(0 0 0 / 0.18); }
+.poster-lamp { position: absolute; left: 14%; right: 14%; top: -8.5cqi; height: 8.5cqi; z-index: 2; }
+.poster-lamp-bar {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3cqi;
+  border-radius: 0.8cqi;
+  background: linear-gradient(#2c2c2c, #070707 70%);
+  box-shadow: 0 0.6cqi 1.2cqi rgb(0 0 0 / 0.35);
+}
+.poster-lamp-arm {
+  position: absolute;
+  left: 50%;
+  top: 2cqi;
+  width: 4cqi;
+  height: 6.6cqi;
+  translate: -50% 0;
+  border-radius: 0.5cqi;
+  background: linear-gradient(90deg, #050505, #262626 50%, #050505);
+}
+.poster-lamp-led {
+  position: absolute;
+  left: 3%;
+  right: 3%;
+  bottom: 0.25cqi;
+  height: 0.7cqi;
+  border-radius: 1cqi;
+  background: #fffaf0;
+  box-shadow: 0 0 1.6cqi 0.5cqi rgb(255 246 226 / 0.9), 0 1.4cqi 4cqi 1cqi rgb(255 240 214 / 0.55);
+}
+/* Light from the lamp: bright at the top of the print, fading down; a soft wash on the wall above. */
+.poster-wash {
+  position: absolute;
+  inset: 2.2cqi;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 85% 48% at 50% -4%, rgb(255 244 226 / 0.95), rgb(255 240 218 / 0.3) 50%, transparent 80%),
+    linear-gradient(to bottom, transparent 50%, rgb(40 30 20 / 0.16));
+  mix-blend-mode: screen;
+}
+.poster-wall-wash {
+  position: absolute;
+  left: -30%;
+  right: -30%;
+  top: -16cqi;
+  height: 46cqi;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 50% 60% at 50% 20%, rgb(255 248 236 / 1), rgb(255 246 230 / 0.55) 40%, transparent 72%);
+}
+.poster-close {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 16px);
+  white-space: nowrap;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ground-ink);
+  color: var(--ground);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.poster-close:focus-visible { outline: 2px solid var(--highlight); outline-offset: 3px; }
 
 .leftovers-answer { position: sticky; top: 96px; display: grid; gap: 12px; justify-items: start; }
 .leftovers-answer-line { font-size: 0.9rem; line-height: 1.35; min-height: 2.7em; }
-.leftovers-answer[data-answer="tied"] .tag { animation: leftover-pulse 1.4s ease-in-out infinite; }
+
 
 /* The scene's confirmation: a person pops up with a speech bubble. */
 .leftovers-popper { display: flex; align-items: flex-end; gap: 4px; margin-top: 8px; }
-.leftovers-popper .character { display: block; flex: none; }
+.leftovers-person { display: block; flex: none; height: 170px; width: auto; }
 .leftovers-bubble {
   position: relative;
   max-width: 15ch;
@@ -122,20 +215,15 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .leftovers-popper .character { animation: leftover-pop 520ms cubic-bezier(0.3, 1.5, 0.5, 1) both; transform-origin: 50% 100%; }
+  .leftovers-person { animation: leftover-pop 520ms cubic-bezier(0.3, 1.5, 0.5, 1) both; transform-origin: 50% 100%; }
   .leftovers-bubble { animation: leftover-pop 420ms 180ms cubic-bezier(0.3, 1.5, 0.5, 1) both; transform-origin: 100% 100%; }
-  .leftover-more { transition: grid-template-rows 420ms cubic-bezier(0.2, 0.7, 0.2, 1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .leftovers-answer[data-answer="tied"] .tag { animation: none; outline: 2px solid var(--cord-seller); outline-offset: 6px; border-radius: 12px; }
+  .poster-frame { transition: none; }
 }
 @keyframes leftover-pop {
   from { opacity: 0; translate: 0 40px; scale: 0.6; }
   to { opacity: 1; translate: 0 0; scale: 1; }
-}
-@keyframes leftover-pulse {
-  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
-  50% { filter: drop-shadow(0 0 14px var(--cord-seller)); }
 }
 
 @media (max-width: 64rem) {
@@ -154,16 +242,41 @@
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ground-ink) 10%, transparent), 0 16px 40px -24px color-mix(in srgb, var(--night) 60%, transparent);
     backdrop-filter: blur(14px);
   }
-  .leftovers-answer .tag { font-size: 0.75rem; gap: 6px; }
   .leftovers-answer-line { min-height: 0; }
   .leftovers-popper { position: absolute; right: 8px; bottom: 100%; margin: 0 0 -6px; }
-  .leftovers-popper .character { max-height: 110px; }
+  .leftovers-person { height: 110px; }
   .leftovers-bubble { margin-bottom: 64px; }
-  .leftovers-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .leftovers-grid { grid-template-columns: repeat(2, minmax(0, 250px)); justify-content: center; }
+  .poster-close { left: auto; right: 0; top: calc(100% + 12px); }
 }
 @media (max-width: 30rem) {
   .leftovers-note { text-align: left; }
-  .leftover-button { padding: 14px 14px 12px; }
-  .leftover-top { flex-direction: column; margin-bottom: 8px; }
-  .leftover-more p { padding-inline: 14px; }
 }
+
+/* The answer: the glass tag with the open item hanging from its top hole; the cord snaps or stays tied. */
+.answer-stage { position: relative; width: 100%; aspect-ratio: 280 / 200; }
+.answer-tag img { display: block; width: 100%; height: 100%; object-fit: fill; }
+.answer-tag-name { position: absolute; left: 24%; top: 36%; font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; color: #fff; text-shadow: 0 1px 6px rgb(160 50 30 / 0.5); }
+.answer-cord { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; z-index: 1; }
+.answer-object { z-index: 2; }
+.answer-knot path { stroke-width: 2.4; }
+.answer-knot circle { fill: currentColor; stroke: none; }
+.answer-cord { color: var(--cord-clears); }
+.leftovers-answer[data-answer="tied"] .answer-cord, .leftovers-answer[data-answer="unread"] .answer-cord { color: var(--cord-seller); }
+.answer-object img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.leftovers-answer[data-answer="tied"] .answer-cord, .leftovers-answer[data-answer="unread"] .answer-cord { stroke: var(--cord-seller); }
+.leftovers-answer[data-answer="unread"] .answer-cord { stroke-dasharray: 4 6; }
+.leftovers-answer[data-answer="none"] .answer-cord, .leftovers-answer[data-answer="travels"] .answer-cord { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .answer-object { animation: answer-arrive 520ms cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+  .leftovers-answer[data-answer="cut"] .answer-cord-b { animation: cord-snap 600ms 300ms ease-in forwards; }
+  .leftovers-answer[data-answer="cut"] .answer-object { animation: answer-arrive 520ms cubic-bezier(0.3, 1.4, 0.5, 1) both, object-fall 700ms 360ms ease-in forwards; }
+  .leftovers-answer[data-answer="tied"] .answer-cord path { animation: cord-tug 1.6s ease-in-out infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .leftovers-answer[data-answer="cut"] .answer-cord-b, .leftovers-answer[data-answer="cut"] .answer-object { opacity: 0; }
+}
+@keyframes answer-arrive { from { opacity: 0; translate: 30px -20px; scale: 0.6; } to { opacity: 1; translate: 0 0; scale: 1; } }
+@keyframes cord-snap { to { opacity: 0; translate: 6px 30px; } }
+@keyframes object-fall { to { opacity: 0; translate: 20px 120px; rotate: 40deg; } }
+@keyframes cord-tug { 0%, 100% { stroke-width: 2.4; } 50% { stroke-width: 3.6; } }

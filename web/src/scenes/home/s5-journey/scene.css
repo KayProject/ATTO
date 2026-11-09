@@ -1,46 +1,88 @@
-.scene-journey { position: relative; overflow: clip; background: var(--sky); color: var(--sky-ink); padding-block: 4rem; }
-.journey-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 1rem; padding-inline: var(--scene-gutter); }
-.journey-top h2 { font-size: 1.75rem; }
-.journey-top > span { font-family: var(--font-machine); font-size: 0.875rem; }
-.journey-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; list-style: none; padding: 4rem 0 2rem; }
-.journey-stop { flex: 0 0 85%; min-width: 0; padding-inline: var(--scene-gutter); scroll-snap-align: start; }
-.journey-stop h3 { font-size: var(--display-xl); font-weight: 550; line-height: 1.05; letter-spacing: -0.065em; }
-.journey-fact { max-width: 25rem; margin-top: 1.5rem; font-size: 1rem; }
-.journey-still-tag { margin-top: 3rem; }
-.journey-still-end { margin-top: 2rem; display: grid; gap: 1rem; }
-.journey-still-end > span, .journey-payment { font-family: var(--font-machine); background: var(--highlight); color: var(--highlight-ink); padding: 0.75rem 1.5rem; border-radius: var(--radius-pill); width: fit-content; }
-.journey-moving { display: none; }
-.journey-path { width: 100%; height: 6rem; margin-top: 1rem; fill: none; stroke: var(--sky-ink); stroke-width: 1; }
-.journey-path path:first-child { opacity: 0.25; }
-.journey-path-progress { stroke-width: 2; }
-.journey-honesty { padding-inline: var(--scene-gutter); margin-top: 1rem; font-size: 0.875rem; }
-.journey-unavailable { padding: 6rem var(--scene-gutter); }
-.journey-motion { height: 100svh; min-height: 40rem; padding-block: 6rem 2rem; }
-.journey-motion .journey-track { overflow: visible; padding-top: 3rem; width: 100%; height: calc(100svh - 12rem); position: relative; z-index: 2; }
-.journey-motion .journey-stop { flex-basis: 85vw; position: relative; }
-.journey-motion .journey-fact { position: absolute; bottom: 8rem; padding: 0.5rem 1rem; background: var(--sky); border-radius: var(--radius-pill); }
-.journey-motion .journey-stop h3 { font-size: clamp(5rem, 11vw, 11rem); white-space: nowrap; }
-.journey-motion .journey-still-tag, .journey-motion .journey-still-end { display: none; }
-.journey-motion .journey-moving { display: block; position: absolute; inset: 47% 0 7rem; pointer-events: none; }
-.journey-traveler { position: absolute; width: min(28rem, 36vw); left: 24%; top: 0; }
-.journey-payment { position: absolute; left: 45%; top: 40%; }
-.journey-refusal { position: absolute; left: 57%; top: 0; display: grid; justify-items: start; max-width: 20rem; }
-.journey-old-key { display: inline-flex; }
-.journey-motion .journey-path { position: absolute; bottom: 9rem; left: 0; }
-.journey-motion .journey-honesty { position: absolute; bottom: 6rem; }
-@media (max-width: 47.99rem) {
-  .journey-top h2 { max-width: 15rem; }
-  .journey-stop { flex-basis: 92%; }
-  .journey-stop h3 { font-size: clamp(3rem, 12vw, 5rem); }
-  .journey-still-tag { max-width: 100%; }
-  .journey-honesty { max-width: 28rem; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .journey-track { display: grid; gap: 4rem; overflow: visible; }
-  .journey-stop { width: 100%; }
-  .journey-stop h3 { font-size: var(--display-lg); }
-  .journey-still-tag { max-width: 36rem; }
-  .journey-path { display: none; }
-}
+/* Sale journey: step words travel sideways at the top; the glass sale plays out on the path below. */
+.scene-journey { position: relative; overflow: clip; background: var(--sky); color: var(--sky-ink); padding-block: 5rem 4rem; }
+.journey-top { padding-inline: var(--scene-gutter); }
+.journey-top h2 { font-size: clamp(2rem, 3.4vw, 3rem); letter-spacing: -0.035em; }
 
+.journey-track { display: grid; gap: 2.5rem; list-style: none; margin: 0; padding: 2.5rem var(--scene-gutter) 2rem; }
+.journey-stop { min-width: 0; }
+.journey-num { display: block; font-family: var(--font-machine); font-size: 0.8rem; opacity: 0.6; }
+.journey-stop h3 { font-size: var(--display-lg); font-weight: 600; line-height: 1; letter-spacing: -0.05em; margin-top: 0.25rem; }
+.journey-fact { max-width: 30rem; margin-top: 0.75rem; font-size: 1.05rem; line-height: 1.45; }
+
+/* Still version (reduced motion, small screens): the finished sale as one picture. */
+.journey-stage { position: relative; height: clamp(220px, 46vw, 340px); margin: 1rem var(--scene-gutter) 0; }
+.journey-path { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 28%; fill: none; stroke: var(--sky-ink); stroke-width: 1; }
+.journey-path path:first-child { opacity: 0.22; }
+.journey-path-progress { stroke-width: 2; stroke: var(--highlight); stroke-dashoffset: 0; }
+
+.journey-person { position: absolute; bottom: 8%; height: 62%; aspect-ratio: 0.7; }
+.journey-person img, .journey-buyer-walk { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
+.journey-person[data-frame="0"] .journey-buyer-walk img:last-child,
+.journey-person[data-frame="1"] .journey-buyer-walk img:first-child,
+.journey-seller[data-frame="0"] img:last-child,
+.journey-seller[data-frame="1"] img:first-child { visibility: hidden; }
+.journey-seller { left: 2%; }
+.journey-buyer { right: 2%; }
+.journey-buyer-walk { transform: scaleX(-1); visibility: hidden; }
+.journey-buyer-wave { transform: scaleX(-1); }
+
+.journey-vault { position: absolute; left: 36%; bottom: 14%; width: 15%; height: auto; }
+.journey-coin { position: absolute; left: 40%; bottom: 40%; width: 6%; height: auto; opacity: 0; }
+.journey-payout { position: absolute; left: 12%; bottom: 42%; display: flex; align-items: center; gap: 8px; }
+.journey-payout img { width: clamp(36px, 4vw, 56px); height: auto; }
+.journey-payout span { font-family: var(--font-machine); font-size: 0.85rem; padding: 6px 12px; border-radius: 999px; background: var(--highlight); color: var(--highlight-ink); }
+
+.journey-bundle { position: absolute; left: 62%; bottom: 22%; width: 26%; aspect-ratio: 4 / 3; transform-origin: 30% 60%; }
+.journey-cords { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; fill: none; }
+.journey-cord-set { color: var(--cord-clears); }
+.journey-cord-set.journey-cord-seller { color: var(--cord-seller); }
+.journey-cord, .journey-knot path { stroke: currentColor; stroke-width: 3; stroke-linecap: round; fill: none; }
+.journey-knot circle { fill: currentColor; }
+.journey-tag img { display: block; width: 100%; height: 100%; object-fit: fill; }
+.journey-tag .journey-tag-clean { position: absolute; inset: 0; opacity: 0; }
+.journey-cords { z-index: 1; }
+.journey-obj { z-index: 2; }
+.journey-tag-name { position: absolute; left: 22%; top: 36%; font-family: var(--font-display); font-weight: 600; font-size: clamp(0.8rem, 1.3vw, 1.2rem); color: #fff; text-shadow: 0 1px 8px rgb(160 50 30 / 0.5); }
+.journey-scissors { z-index: 3; opacity: 0; visibility: hidden; }
+.journey-scissors img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.journey-scissors-closed { opacity: 0; }
+.journey-stamp { position: absolute; left: 22%; top: -20%; width: 22%; height: auto; opacity: 0; visibility: hidden; }
+.journey-check { position: absolute; left: 4%; top: 12%; padding: 6px 12px; border-radius: 999px; background: var(--ground); font-size: 0.8rem; font-weight: 600; box-shadow: inset 0 0 0 1.5px var(--ground-ink); }
+.journey-old-key { position: absolute; left: 44%; bottom: 46%; width: 8%; height: auto; opacity: 0; }
+.journey-refusal { padding: 1.5rem var(--scene-gutter) 0; max-width: 40rem; font-size: 1.05rem; font-weight: 550; }
+.journey-unavailable { padding: 6rem var(--scene-gutter); }
+
+/* Still version shows the end state; the glass only reads clear when nothing is left for the seller. */
+.scene-journey:not(.journey-motion) .journey-tag-clean { opacity: 0.45; }
+.scene-journey[data-clean]:not(.journey-motion) .journey-tag-clean { opacity: 1; }
+.scene-journey:not(.journey-motion) .journey-key,
+.scene-journey:not(.journey-motion) .journey-nft,
+.scene-journey:not(.journey-motion) .journey-cut-end,
+.scene-journey:not(.journey-motion) .journey-vault,
+.scene-journey:not(.journey-motion) .journey-old-key { display: none; }
+
+/* Pinned, moving version. */
+.journey-motion { height: 100svh; min-height: 40rem; padding-block: 5.5rem 1.5rem; display: flex; flex-direction: column; }
+.journey-motion .journey-track { display: flex; gap: 0; width: max-content; padding: 1.25rem 0 0; }
+.journey-motion .journey-stop { flex: 0 0 auto; min-width: 58vw; padding-inline: var(--scene-gutter) 6vw; opacity: 0.3; transition: opacity 300ms; }
+.journey-motion .journey-stop[data-current] { opacity: 1; }
+.journey-motion .journey-stop h3 { font-size: clamp(4rem, 9vw, 9rem); white-space: nowrap; }
+.journey-motion .journey-stage { flex: 1; height: auto; margin-top: 0; }
+.journey-motion .journey-person { height: 58%; }
+.journey-motion .journey-buyer-walk { visibility: visible; }
+.journey-motion .journey-buyer-wave { opacity: 0; }
+.journey-motion .journey-bundle { left: 10%; bottom: 20%; }
+.journey-motion .journey-tag-clean { opacity: 0; }
+.journey-motion .journey-check { opacity: 0; }
+.journey-motion .journey-payout { opacity: 0; }
+.journey-motion .journey-scissors { visibility: visible; opacity: 1; }
+.journey-motion .journey-stamp { visibility: visible; opacity: 1; }
+.journey-motion .journey-refusal { position: absolute; right: var(--scene-gutter); bottom: 46%; max-width: 21rem; padding: 14px 18px; border-radius: 20px 20px 4px 20px; background: var(--night); color: var(--night-ink); font-size: 1.05rem; line-height: 1.4; }
+
+@media (max-width: 47.99rem) {
+  .journey-stage { height: 260px; }
+  .journey-bundle { width: 46%; left: 44%; }
+  .journey-person { height: 56%; }
+  .journey-payout { left: 22%; bottom: 60%; }
+}
 .journey-track:focus-visible { outline-color: var(--sky-ink); outline-offset: -4px; }

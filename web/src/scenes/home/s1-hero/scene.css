@@ -41,16 +41,16 @@
 .hero-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(3rem, 7.4vw, 7.25rem);
+  font-size: clamp(2.6rem, 5.4vw, 5.6rem);
   font-weight: 600;
-  line-height: 0.95;
-  letter-spacing: -0.045em;
-  max-width: 8.5ch;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  max-width: 10.5ch;
   transform-origin: 0 0;
   text-wrap: balance;
 }
 .hero-fade { display: grid; gap: clamp(20px, 3vh, 32px); }
-.hero-sub { margin: 0; font-size: clamp(1.05rem, 1.4vw, 1.3rem); line-height: 1.45; max-width: 26ch; }
+.hero-sub { margin: 0; font-size: clamp(1.05rem, 1.4vw, 1.3rem); line-height: 1.45; max-width: 34ch; }
 .hero-search {
   display: flex;
   align-items: center;
@@ -87,7 +87,7 @@
   aspect-ratio: 1000 / 860;
   transform-style: preserve-3d;
 }
-.gh-box > * { position: absolute; }
+.gh-box > *, .gh-figure > * { position: absolute; }
 .gh-giant {
   left: -6%;
   right: -6%;
@@ -103,7 +103,7 @@
   white-space: nowrap;
   pointer-events: none;
 }
-.gh-tag { container-type: inline-size; aspect-ratio: 1400 / 681; filter: drop-shadow(0 40px 40px rgb(249 92 75 / 0.28)); }
+.gh-tag { position: relative; z-index: 4; container-type: inline-size; aspect-ratio: 1400 / 681; filter: drop-shadow(0 40px 40px rgb(249 92 75 / 0.28)); }
 .gh-tag-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .gh-tag-clean { opacity: 0; }
 .gh-shine {
@@ -143,7 +143,7 @@
   white-space: nowrap;
 }
 
-.gh-cords { inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.gh-cords { inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 15; }
 .gh-cords path { fill: none; stroke-linecap: round; }
 .gh-cord-glow path { stroke-width: 16; opacity: 0.35; filter: url(#gh-glow); }
 .gh-cord-body path { stroke-width: 7; }
@@ -153,21 +153,44 @@
 .cord-seller .gh-cord-glow path { stroke: var(--highlight); opacity: 0.18; }
 .cord-seller .gh-cord-body path { stroke: var(--ground-ink); }
 .cord-seller .gh-cord-shine path { stroke: rgb(249 92 75 / 0.75); }
+/* Knots where each cord is tied through a hole or ring: 3D volume, glow, specular shine, and contact shadow. */
+.gh-knot { filter: drop-shadow(0 2px 5px rgb(0 0 0 / 0.3)); }
+.gh-knot path { fill: none; stroke-linecap: round; }
+.gh-knot-glow path { stroke-width: 14; opacity: 0.3; filter: url(#gh-glow); stroke: var(--highlight); }
+.cord-seller .gh-knot-glow path { opacity: 0.12; }
+.cord-clears .gh-knot-body path { stroke: url(#gh-cord-coral); stroke-width: 6; }
+.cord-clears .gh-knot-body .gh-knot-bead { fill: #f95c4b; }
+.cord-seller .gh-knot-body path { stroke: var(--ground-ink); stroke-width: 6; }
+.cord-seller .gh-knot-body .gh-knot-bead { fill: var(--ground-ink); }
+.gh-knot-shine path { stroke: rgb(255 255 255 / 0.85); stroke-width: 1.5; transform: translate(-1.2px, -1.2px); }
+.cord-seller .gh-knot-shine path { stroke: rgb(249 92 75 / 0.75); }
+.gh-knot-shine .gh-knot-bead { fill: rgb(255 255 255 / 0.85); }
+.cord-seller .gh-knot-shine .gh-knot-bead { fill: rgb(249 92 75 / 0.75); }
 .gh-flash { fill: #fff; opacity: 0; transform-box: fill-box; transform-origin: center; filter: url(#gh-glow); }
 
 .gh-object img,
 .gh-person img { display: block; width: 100%; height: auto; user-select: none; }
-.gh-object { filter: drop-shadow(0 18px 18px rgb(249 92 75 / 0.22)); }
+.gh-object { filter: drop-shadow(0 18px 18px rgb(249 92 75 / 0.22)); z-index: 6; }
 .gh-person img { height: 100%; width: 100%; object-fit: contain; }
-.gh-woman-arm { transform-origin: 8% 93%; }
-.gh-man-arms { transform-origin: 10% 60%; }
+/* A person and their limbs move together on entrance; limbs only ever rotate on their own. */
+.gh-figure { position: absolute; inset: 0; pointer-events: none; }
+/* Layer stack: girl arm tucks behind her collar/shoulder; cord sandwiches between man's far and near arms. */
+.gh-woman-arm { z-index: 24; }
+.gh-woman-body { z-index: 26; }
+.gh-man-arm-far { z-index: 10; }
+.gh-man-body { z-index: 12; }
+.gh-man-arm-near { z-index: 20; }
+/* The man's two arms share one drawing; clean boundaries without chin slivers. */
+.gh-man-arm-far img { clip-path: polygon(0 0, 100% 0, 100% 38.5%, 76.5% 39.5%, 70.5% 48%, 60% 51%, 45% 58%, 30% 61.7%, 15% 63.1%, 0 63.5%); }
+.gh-man-arm-near img { clip-path: polygon(0 63.5%, 15% 63.1%, 30% 61.7%, 45% 58%, 60% 53%, 70.5% 52%, 76.5% 44%, 100% 42%, 100% 100%, 0 100%); }
 
-.gh-card { z-index: 3; }
+.gh-card { z-index: 30; }
 .gh-card-glass {
   display: grid;
   padding: 14px 20px;
   border-radius: 20px;
   min-width: 11rem;
+  white-space: nowrap;
   font-size: clamp(0.85rem, 1.1vw, 1.05rem);
   line-height: 1.25;
   background: color-mix(in srgb, #fff 45%, transparent);
@@ -179,13 +202,17 @@
 .gh-card-glass strong { font-family: var(--font-display); font-size: 1.9em; font-weight: 600; margin-right: 0.2em; }
 .gh-card-after { opacity: 0; }
 .gh-card-after strong { color: var(--highlight); }
+/* The right-hand card hugs the edge so its label never runs off the page. */
+.gh-card[data-card="nfts"] { left: auto !important; right: 0; }
 [data-card="seller"] .gh-card-glass { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 0 0 1.5px var(--ground-ink), 0 24px 48px -28px rgb(0 0 0 / 0.35); }
 
 @media (max-width: 52rem) {
   .hero-stage { grid-template-columns: 1fr; align-content: start; padding-top: 96px; }
   .hero-title { font-size: clamp(2.6rem, 12vw, 3.6rem); max-width: 10ch; }
   .gh-giant { font-size: 18vw; }
-  .gh-card-glass { min-width: 0; padding: 8px 12px; font-size: 0.75rem; border-radius: 14px; }
+  .gh-card-glass { min-width: 0; padding: 8px 12px; font-size: 0.72rem; border-radius: 14px; }
+  .gh-card[data-card="nfts"], .gh-card[data-card="keys"] { left: auto !important; right: 0; }
+  .gh-card[data-card="seller"] { left: 0 !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   .gh-card-after { display: none; }

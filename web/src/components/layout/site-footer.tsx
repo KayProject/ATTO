@@ -3,7 +3,7 @@ export function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="frame site-footer-inner">
-        <p>Inspect. Review. Hand over.</p>
+        <p>Where NEAR names change hands.</p>
         <nav aria-label="Legal">
           <Link href="/legal/terms">Terms</Link>
           <Link href="/legal/privacy">Privacy</Link>

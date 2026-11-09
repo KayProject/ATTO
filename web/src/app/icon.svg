@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="60" fill="#000"/>
+  <clipPath id="t" clipPathUnits="userSpaceOnUse"><path d="M0 0H760V312H178V180H154V312H0Z"/></clipPath>
+  <g transform="translate(128 128) scale(0.82) translate(-128 -180)">
+    <path d="M203 180A75 75 0 1 1 53 180A75 75 0 1 1 203 180V280" fill="none" stroke="#F6F4F1" stroke-width="50" clip-path="url(#t)"/>
+  </g>
+</svg>

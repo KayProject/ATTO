@@ -1,8 +1,8 @@
 /* Statement: one large sentence on the ground, centred, with a highlighted ending and a dotted link. */
 .scene-statement {
   position: relative;
-  background: var(--ground);
-  color: var(--ground-ink);
+  background: var(--sky);
+  color: var(--sky-ink);
 }
 .statement-stage {
   min-height: 100svh;
@@ -18,8 +18,10 @@
   .statement-stage { position: sticky; top: 0; height: 100svh; min-height: 0; }
 }
 .statement-text {
-  max-width: 17ch;
-  font-size: var(--display-md);
+  position: relative;
+  z-index: 1;
+  max-width: 16ch;
+  font-size: clamp(2.25rem, 4.6vw, 4.5rem);
   line-height: 1.08;
   letter-spacing: -0.035em;
   font-weight: 600;
@@ -55,4 +57,24 @@
 }
 .statement-link:hover { text-decoration-color: currentColor; }
 .statement-link:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 8px; }
-.statement-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ground-ink); }
+.statement-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--highlight); }
+
+.statement-body {
+  position: relative;
+  z-index: 1;
+  max-width: 46ch;
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.statement-key {
+  position: absolute;
+  right: clamp(-40px, 2vw, 80px);
+  top: 18%;
+  width: clamp(140px, 17vw, 260px);
+  pointer-events: none;
+}
+.statement-key img { display: block; width: 100%; height: auto; }
+@media (max-width: 47.99rem) {
+  .statement-key { top: 8%; right: -24px; width: 120px; opacity: 0.85; }
+}

@@ -1,92 +1,211 @@
+// Home scene: the sale as a pinned sideways journey. Step words slide past while glass layers act out each step on the path.
+/* eslint-disable @next/next/no-img-element -- pre-sized WebP layers that GSAP moves directly */
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useLoad } from "@/components/providers";
 import { atto } from "@/lib/atto/client";
 import { formatNear } from "@/lib/atto/format";
 import { gsap } from "@/motion/gsap";
 import { EASE, SCRUB } from "@/motion/tokens";
 import { useScene } from "@/motion/use-scene";
-import { CastObject } from "@/scenes/tag/cast";
 import { cordsFor, isDrawnClean } from "@/scenes/tag/cords";
-import { GlassTag } from "@/scenes/tag/glass-tag";
+import { GLASS, PENCIL } from "../assets";
+import { box, cord, hang, knot, layer, pin, TIE, type Point } from "../glass-rig";
 import { DEMO_NAME, useDemoReport } from "../use-demo-report";
-import { journeyState } from "./model";
 
 const stops = [
-  { word: "Listed", fact: "The buyer reads and accepts the report." },
-  { word: "Paid", fact: "48 h buyer reclaim if the name never arrives." },
-  { word: "Handed over", fact: "The escrow holds the name and payment." },
-  { word: "Cut", fact: "Intents keys and NFT approvals are removed." },
-  { word: "Checked", fact: "Full reversal if the check fails." },
-  { word: "Swapped", fact: "Name to buyer. NEAR to seller. In the same step." },
+  { word: "Review", fact: "The buyer reads the name's report and agrees to the sale." },
+  { word: "Pay", fact: "The buyer's payment goes into escrow. If the name doesn't arrive within 48 hours, the buyer can take it back." },
+  { word: "Transfer", fact: "The seller transfers the name into escrow." },
+  { word: "Remove access", fact: "ATTO removes the previous owner's Intents keys and NFT approvals." },
+  { word: "Verify", fact: "ATTO checks on chain that they're gone." },
+  { word: "Complete", fact: "The buyer receives the name and the seller receives the payment in the same step." },
 ];
+
+const REFUSAL = "The previous owner's key tries to withdraw the name's funds, and NEAR Intents refuses it.";
+
+// The name and what hangs from it, in a 400 x 300 box: each cord runs from a tag hole to the object's ring.
+const B = { w: 400, h: 300 };
+const TAG = layer("tag-cloudy", 0, 130, 280, -8);
+const KEY = hang("key", 120, TIE.key, { x: 312, y: 46 });
+const NFT = hang("nft-frame", 60, TIE["nft-frame"], { x: 356, y: 120 });
+const SEAL = hang("seal", 46, TIE.seal, { x: 340, y: 226 });
+const KEY_CORD = cord(pin(TAG, TIE.tagHoles[0]), pin(KEY, TIE.key), 14);
+const NFT_CORD = cord(pin(TAG, TIE.tagHoles[1]), pin(NFT, TIE["nft-frame"]), 16);
+const SEAL_CORD = cord(pin(TAG, TIE.tagHoles[2]), pin(SEAL, TIE.seal), 18);
+// Each cord is knotted through its tag hole and through the object's ring.
+const tied = (a: Point, b: Point, sag: number, ra: number, rb: number) => {
+  const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + sag };
+  return [knot(a, mid, ra, 3.5), knot(b, mid, rb, 3.5)];
+};
+const KEY_KNOTS = tied(pin(TAG, TIE.tagHoles[0]), pin(KEY, TIE.key), 14, 4.5, 6);
+const NFT_KNOTS = tied(pin(TAG, TIE.tagHoles[1]), pin(NFT, TIE["nft-frame"]), 16, 4.5, 3);
+const SEAL_KNOTS = tied(pin(TAG, TIE.tagHoles[2]), pin(SEAL, TIE.seal), 18, 4.5, 3);
+const Knot = ({ k, className }: { k: ReturnType<typeof knot>; className?: string }) => (
+  <g className={`journey-knot ${className ?? ""}`}>
+    <path d={k.loop} />
+    <path d={k.tail} />
+    <circle cx={k.bead.x} cy={k.bead.y} r="3.4" />
+  </g>
+);
+const SCISSORS = layer("scissors-open", KEY_CORD.cut.x - 34, KEY_CORD.cut.y - 31, 68);
+
+// Seconds of timeline per walk frame.
+const STEP = 0.06;
 
 export function JourneyScene() {
   const ref = useRef<HTMLElement>(null);
-  const sceneCleanup = useRef<(() => void) | null>(null);
   const { data: report, error } = useDemoReport();
   const { data: sales } = useLoad(() => atto.openSales(), []);
-  const [progress, setProgress] = useState({ cleared: 0, stamped: false, stop: 0 });
-  const initialCords = report ? cordsFor(report) : [];
-  const liveCords = report ? cordsFor(report, progress.cleared) : [];
-  const total = initialCords.filter((cord) => cord.kind === "clears").length;
+  const cords = report ? cordsFor(report) : [];
+  const hasKey = cords.some((c) => c.kind === "clears" && c.object === "key");
+  const hasNft = cords.some((c) => c.kind === "clears" && c.object === "nft");
+  const sellerLeft = cords.some((c) => c.kind !== "clears");
+  const total = cords.filter((c) => c.kind === "clears").length;
+  const endsClean = report ? isDrawnClean(cordsFor(report, total)) : false;
   const listing = sales?.find((sale) => sale.token_id === report?.name);
-  const payment = listing ? `${formatNear(listing.price)} NEAR` : "NEAR payment";
+  const payment = listing ? `${formatNear(listing.price)} NEAR` : "NEAR";
 
   useScene(ref, (scope) => {
-    sceneCleanup.current?.();
-    sceneCleanup.current = null;
     if (!report) return;
     const media = gsap.matchMedia();
     media.add("(min-width: 48rem) and (min-height: 40rem)", () => {
-      const track = scope.querySelector<HTMLElement>(".journey-track")!;
-      const traveler = scope.querySelector(".journey-traveler");
+      const q = (s: string) => scope.querySelector<HTMLElement>(s);
+      const all = (s: string) => Array.from(scope.querySelectorAll<HTMLElement>(s));
+      const track = q(".journey-track")!;
+      const stage = q(".journey-stage")!;
+      const seller = q(".journey-seller")!;
+      const buyer = q(".journey-buyer")!;
+      const W = () => stage.clientWidth;
       scope.classList.add("journey-motion");
-      const timeline = gsap.timeline({
-        scrollTrigger: { trigger: scope, start: "top top", end: "+=440%", pin: true, pinType: "transform", scrub: SCRUB, invalidateOnRefresh: true },
+
+      // Walk frames advance only while someone is moving.
+      const walking = (t: number) => t < 1 || (t > 5 && t < 5.6);
+      const tl = gsap.timeline({
+        scrollTrigger: { trigger: scope, start: "top top", end: "+=520%", pin: true, pinType: "transform", scrub: SCRUB, invalidateOnRefresh: true },
+        defaults: { ease: EASE.scrub },
+        onUpdate: () => {
+          const t = tl.time();
+          const frame = walking(t) ? String(Math.floor(t / STEP) % 2) : "0";
+          seller.dataset.frame = frame;
+          buyer.dataset.frame = frame;
+          const stop = Math.min(5, Math.floor(t));
+          all(".journey-stop").forEach((el, i) => el.toggleAttribute("data-current", i === stop));
+        },
       });
-      const cursor = { progress: 0 };
-      timeline.to(track, { x: () => -(track.scrollWidth - scope.clientWidth), duration: 5.8, ease: EASE.scrub }, 0);
-      timeline.to(cursor, { progress: 1, duration: 5.8, ease: EASE.scrub, onUpdate: () => {
-        const next = journeyState(cursor.progress, initialCords);
-        setProgress((old) => old.cleared === next.cleared && old.stamped === next.stamped && old.stop === next.stop ? old : next);
-      } }, 0);
-      timeline.fromTo(scope.querySelector(".journey-path-progress"), { strokeDashoffset: 100 }, { strokeDashoffset: 0, duration: 5.8, ease: EASE.scrub }, 0);
-      timeline.fromTo(traveler, { x: 0, y: 16, rotation: -4 }, { x: () => scope.clientWidth * 0.12, y: -20, rotation: 3, duration: 4.8, ease: EASE.scrub }, 0);
-      timeline.to(traveler, { x: () => -scope.clientWidth * 0.12, rotation: -5, duration: 0.5 }, 4.8);
-      timeline.fromTo(scope.querySelector(".journey-payment"), { x: -160, autoAlpha: 0 }, { x: 160, autoAlpha: 1, duration: 0.5 }, 4.8);
-      timeline.fromTo(scope.querySelector(".journey-refusal"), { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.2 }, 5.3);
-      timeline.fromTo(scope.querySelector(".journey-old-key"), { x: 180, rotation: -25 }, { x: 0, rotation: 0, duration: 0.15 }, 5.3)
-        .to(scope.querySelector(".journey-old-key"), { x: 70, rotation: 25, duration: 0.25, ease: EASE.enter }, 5.45);
-      return () => { scope.classList.remove("journey-motion"); };
+
+      const stopEls = all(".journey-stop");
+      tl.set(track, { x: 0 }, 0);
+      stopEls.slice(1).forEach((el, i) => tl.to(track, { x: () => -el.offsetLeft, duration: 0.8 }, i + 0.6));
+      tl
+        .fromTo(q(".journey-path-progress"), { strokeDashoffset: 100 }, { strokeDashoffset: 0, duration: 6 }, 0)
+        // Review: both walk in; the name sits with the seller.
+        .fromTo(seller, { x: () => -W() * 0.2 }, { x: 0, duration: 1 }, 0)
+        .fromTo(buyer, { x: () => W() * 0.25 }, { x: 0, duration: 1 }, 0)
+        .from(q(".journey-bundle"), { autoAlpha: 0, y: 30, duration: 0.4 }, 0.3)
+        // Pay: the vault rises, the coin arcs from the buyer into it.
+        .from(q(".journey-vault"), { autoAlpha: 0, y: 60, scale: 0.8, duration: 0.4 }, 1)
+        .fromTo(q(".journey-coin"), { autoAlpha: 0, x: () => W() * 0.36, y: 0 }, { autoAlpha: 1, x: () => W() * 0.3, y: () => -W() * 0.06, duration: 0.2 }, 1.2)
+        .to(q(".journey-coin"), { x: 0, y: 0, scale: 0.6, duration: 0.5 }, 1.4)
+        .to(q(".journey-coin"), { autoAlpha: 0, duration: 0.1 }, 1.9)
+        // Transfer: the name moves from the seller into escrow.
+        .to(q(".journey-bundle"), { x: () => W() * 0.27, y: () => -W() * 0.02, scale: 0.86, duration: 0.8 }, 2.1)
+        // Remove access: the scissors close and the clearable cords drop away.
+        .from(q(".journey-scissors"), { autoAlpha: 0, x: 60, y: -40, rotate: 20, duration: 0.3 }, 3)
+        .set(q(".journey-scissors-open"), { autoAlpha: 0 }, 3.4)
+        .set(q(".journey-scissors-closed"), { autoAlpha: 1 }, 3.4)
+        .to(all(".journey-cut-end"), { autoAlpha: 0, duration: 0.05 }, 3.4)
+        .to(all(".journey-drop"), { y: 260, x: 40, rotate: 60, autoAlpha: 0, duration: 0.45, ease: "power2.in", stagger: 0.08 }, 3.42)
+        .to(q(".journey-scissors"), { autoAlpha: 0, x: 80, duration: 0.25 }, 3.75)
+        // Verify: the stamp lands; the glass clears when nothing is left for the seller.
+        .from(q(".journey-stamp"), { autoAlpha: 0, y: -160, duration: 0.3, ease: "power2.in" }, 4.1)
+        .to(q(".journey-stamp"), { y: -14, duration: 0.08, yoyo: true, repeat: 1 }, 4.4)
+        .to(q(".journey-stamp"), { autoAlpha: 0, y: -120, duration: 0.25 }, 4.65)
+        .to(q(".journey-tag-clean"), { autoAlpha: endsClean ? 1 : 0.45, duration: 0.3 }, 4.4)
+        .fromTo(q(".journey-check"), { autoAlpha: 0, scale: 0.6 }, { autoAlpha: 1, scale: 1, duration: 0.2 }, 4.45)
+        // Complete: the name goes to the buyer, the payment to the seller.
+        .to(q(".journey-bundle"), { x: () => W() * 0.56, y: 0, scale: 1, duration: 0.6 }, 5)
+        .fromTo(q(".journey-payout"), { autoAlpha: 0, x: () => W() * 0.3 }, { autoAlpha: 1, x: 0, duration: 0.6 }, 5)
+        .set(q(".journey-buyer-walk"), { autoAlpha: 0 }, 5.55)
+        .set(q(".journey-buyer-wave"), { autoAlpha: 1 }, 5.55)
+        // The old key tries to get back in and bounces off.
+        .fromTo(q(".journey-old-key"), { autoAlpha: 0, x: () => -W() * 0.25, y: -80, rotate: -30 }, { autoAlpha: 1, x: () => W() * 0.18, y: 0, rotate: 0, duration: 0.25, ease: "power2.in" }, 5.6)
+        .to(q(".journey-old-key"), { x: () => W() * 0.04, y: -60, rotate: -70, autoAlpha: 0.0, duration: 0.3, ease: "power2.out" }, 5.85)
+        .from(q(".journey-refusal"), { autoAlpha: 0, y: 16, duration: 0.15 }, 5.8)
+        .to({}, { duration: 0.35 });
+
+      return () => {
+        scope.classList.remove("journey-motion");
+      };
     });
-    const cleanup = () => media.revert();
-    sceneCleanup.current = cleanup;
-    return cleanup;
-  }, [report]);
+    return () => media.revert();
+  }, [report, endsClean]);
 
   return (
-    <section ref={ref} className="scene scene-journey" aria-labelledby="journey-title">
-      <div className="journey-top"><h2 id="journey-title">A Clean Sale, step by step.</h2><span>Sale walkthrough</span></div>
+    <section ref={ref} className="scene scene-journey" aria-labelledby="journey-title" data-clean={endsClean || undefined}>
+      <div className="journey-top"><h2 id="journey-title">How a sale works.</h2></div>
       {report ? <>
-        <ol className="journey-track" aria-label="The six steps of a Clean Sale" tabIndex={0}>
-          {stops.map((stop, index) => {
-            const cords = cordsFor(report, index >= 3 ? total : 0);
-            return <li className="journey-stop" key={stop.word}>
-              <h3>{stop.word}</h3><p className="journey-fact">{stop.fact}</p>
-              <div className="journey-still-tag"><GlassTag name={report.name} cords={cords} size="panel" stamped={index >= 4} /></div>
-              {index === 5 && <div className="journey-still-end"><span>{payment}</span>{initialCords.some((cord) => cord.object === "key" && cord.kind === "clears") && <p>The old Intents key can no longer withdraw.</p>}</div>}
-            </li>;
-          })}
+        <ol className="journey-track" aria-label="The six steps of a sale" tabIndex={0}>
+          {stops.map((stop, index) => (
+            <li className="journey-stop" key={stop.word} data-current={index === 0 || undefined}>
+              <span className="journey-num">{String(index + 1).padStart(2, "0")}</span>
+              <h3>{stop.word}</h3>
+              <p className="journey-fact">{stop.fact}</p>
+            </li>
+          ))}
         </ol>
-        <div className="journey-moving" aria-hidden="true">
-          <div className="journey-traveler"><GlassTag name={report.name} cords={liveCords} size="panel" stamped={progress.stamped} /></div>
-          <span className="journey-payment">{payment}</span>
-          <div className="journey-refusal"><span className="journey-old-key"><CastObject kind="key" size={88} cut /></span><p>The old Intents key can no longer withdraw.</p></div>
+
+        <div className="journey-stage" aria-hidden="true">
+          <svg className="journey-path" viewBox="0 0 1440 100" preserveAspectRatio="none">
+            <path d="M0 64 C180 64 180 12 360 32 S540 98 720 64 S900 12 1080 32 S1260 98 1440 64" />
+            <path className="journey-path-progress" pathLength="100" strokeDasharray="100" d="M0 64 C180 64 180 12 360 32 S540 98 720 64 S900 12 1080 32 S1260 98 1440 64" />
+          </svg>
+
+          <span className="journey-person journey-seller" data-frame="0">
+            <img src={PENCIL("seller-walk-a")} alt="" draggable={false} />
+            <img src={PENCIL("seller-walk-b")} alt="" draggable={false} />
+          </span>
+          <span className="journey-person journey-buyer" data-frame="0">
+            <span className="journey-buyer-walk">
+              <img src={PENCIL("buyer-walk-a")} alt="" draggable={false} />
+              <img src={PENCIL("buyer-walk-b")} alt="" draggable={false} />
+            </span>
+            <img className="journey-buyer-wave" src={PENCIL("buyer-wave")} alt="" draggable={false} />
+          </span>
+
+          <img className="journey-vault" src={GLASS("vault")} alt="" draggable={false} />
+          <img className="journey-coin" src={GLASS("coin")} alt="" draggable={false} />
+          <span className="journey-payout">
+            <img src={GLASS("coin")} alt="" draggable={false} />
+            <span>{payment}</span>
+          </span>
+
+          <div className="journey-bundle">
+            <svg className="journey-cords" viewBox={`0 0 ${B.w} ${B.h}`}>
+              {hasKey && <g className="journey-cord-set"><path className="journey-cord" d={KEY_CORD.near} /><path className="journey-cord journey-cut-end" d={KEY_CORD.far} /><Knot k={KEY_KNOTS[0]} /><Knot k={KEY_KNOTS[1]} className="journey-cut-end" /></g>}
+              {hasNft && <g className="journey-cord-set"><path className="journey-cord" d={NFT_CORD.near} /><path className="journey-cord journey-cut-end" d={NFT_CORD.far} /><Knot k={NFT_KNOTS[0]} /><Knot k={NFT_KNOTS[1]} className="journey-cut-end" /></g>}
+              {sellerLeft && <g className="journey-cord-set journey-cord-seller"><path className="journey-cord" d={SEAL_CORD.whole} /><Knot k={SEAL_KNOTS[0]} /><Knot k={SEAL_KNOTS[1]} /></g>}
+            </svg>
+            <span className="journey-tag" style={box(TAG, B)}>
+              <img src={GLASS("tag-cloudy")} alt="" draggable={false} />
+              <img className="journey-tag-clean" src={GLASS("tag-clean")} alt="" draggable={false} />
+              <span className="journey-tag-name">{report.name}</span>
+            </span>
+            {hasKey && <img className="journey-obj journey-key journey-drop" style={box(KEY, B)} src={GLASS("key")} alt="" draggable={false} />}
+            {hasNft && <img className="journey-obj journey-nft journey-drop" style={box(NFT, B)} src={GLASS("nft-frame")} alt="" draggable={false} />}
+            {sellerLeft && <img className="journey-obj journey-seal" style={box(SEAL, B)} src={GLASS("seal")} alt="" draggable={false} />}
+            <span className="journey-scissors" style={box(SCISSORS, B)}>
+              <img className="journey-scissors-open" src={GLASS("scissors-open")} alt="" draggable={false} />
+              <img className="journey-scissors-closed" src={GLASS("scissors-closed")} alt="" draggable={false} />
+            </span>
+            <img className="journey-stamp" src={GLASS("stamp")} alt="" draggable={false} />
+            <span className="journey-check">Verified on chain</span>
+          </div>
+
+          <img className="journey-old-key" src={GLASS("key")} alt="" draggable={false} />
         </div>
-        <svg className="journey-path" viewBox="0 0 1440 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 64 C180 64 180 12 360 32 S540 98 720 64 S900 12 1080 32 S1260 98 1440 64" /><path className="journey-path-progress" pathLength="100" strokeDasharray="100" d="M0 64 C180 64 180 12 360 32 S540 98 720 64 S900 12 1080 32 S1260 98 1440 64" /></svg>
-        <p className="journey-honesty">{isDrawnClean(cordsFor(report, total)) ? "All reported connections can be cleared." : "Seller-only connections stay attached; unreadable sections stay marked."}</p>
+        <p className="journey-refusal">{REFUSAL}</p>
       </> : <p className="journey-unavailable" role="status">{error ? "The example report could not load. Search a name to read its report." : report === null ? `No report is available for ${DEMO_NAME}. Search another name.` : "Loading the example report…"}</p>}
     </section>
   );

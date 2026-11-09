@@ -10,8 +10,10 @@ export interface CordSpec {
   kind: "clears" | "seller";
   from: Point;
   to: Point;
-  /** How far the cord hangs below a straight line, in scene units. */
+  /** How far the cord hangs below a straight line, in scene units. Ignored when `control` is set. */
   sag: number;
+  /** Explicit curve control point, used when the cord must pass through a hand or the scissors. */
+  control?: Point;
   /** Where along the cord the scissors cut, 0 to 1. */
   cutAt: number;
 }
@@ -38,8 +40,8 @@ function q(a: Point, c: Point, b: Point, k: number): Point {
 export function cordPaths(spec: CordSpec, state: CordState, phase: number): { near: string; far: string } {
   const to = { x: spec.to.x + state.fall.x, y: spec.to.y + state.fall.y };
   const sway = Math.sin(state.t * 1.3 + phase) * 6;
-  const mid = lerp(spec.from, to, 0.5);
-  const control = { x: mid.x + sway, y: mid.y + spec.sag + Math.cos(state.t * 0.9 + phase) * 4 };
+  const base = restControl(spec, to);
+  const control = { x: base.x + sway, y: base.y + Math.cos(state.t * 0.9 + phase) * 4 };
   if (state.cut <= 0) {
     return { near: `M${spec.from.x} ${spec.from.y} Q${control.x} ${control.y} ${to.x} ${to.y}`, far: "" };
   }
@@ -57,8 +59,21 @@ export function cordPaths(spec: CordSpec, state: CordState, phase: number): { ne
   };
 }
 
+function restControl(spec: CordSpec, to: Point): Point {
+  if (spec.control) return spec.control;
+  const mid = lerp(spec.from, to, 0.5);
+  return { x: mid.x, y: mid.y + spec.sag };
+}
+
 /** The point where a cord is cut, for the flash. */
 export function cutPoint(spec: CordSpec): Point {
-  const mid = lerp(spec.from, spec.to, 0.5);
-  return q(spec.from, { x: mid.x, y: mid.y + spec.sag }, spec.to, spec.cutAt);
+  return q(spec.from, restControl(spec, spec.to), spec.to, spec.cutAt);
+}
+
+/** The control point that makes a cord from `from` to `to` pass through `point` at fraction `k`. */
+export function through(from: Point, to: Point, point: Point, k: number): Point {
+  const a = (1 - k) * (1 - k);
+  const b = 2 * k * (1 - k);
+  const c = k * k;
+  return { x: (point.x - a * from.x - c * to.x) / b, y: (point.y - a * from.y - c * to.y) / b };
 }

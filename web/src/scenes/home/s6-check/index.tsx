@@ -1,3 +1,5 @@
+// Home scene: night falls; ownership answers fly past at depth through a glass arch, then the name field appears.
+/* eslint-disable @next/next/no-img-element -- pre-sized WebP layers */
 "use client";
 
 import { type FormEvent, useRef, useState } from "react";
@@ -9,9 +11,11 @@ import type { ChangedAnswer } from "@/lib/atto/types";
 import { gsap } from "@/motion/gsap";
 import { EASE, SCRUB } from "@/motion/tokens";
 import { useScene } from "@/motion/use-scene";
-import { CastObject } from "@/scenes/tag/cast";
+import Link from "next/link";
+import { GLASS, type GlassName } from "../assets";
 
 const DAYS = 30;
+const CARD_OBJECT: GlassName[] = ["stamp", "key", "subaccount-tag"];
 type CheckExample = { name: string; answer: ChangedAnswer | null; failed: boolean };
 
 async function loadExamples(): Promise<CheckExample[]> {
@@ -23,12 +27,12 @@ async function loadExamples(): Promise<CheckExample[]> {
 }
 
 function answerText(example: CheckExample) {
-  if (example.failed || example.answer === null) return "Ownership history unavailable.";
-  if (!example.answer.changed) return `No ownership change in ${DAYS} days.`;
+  if (example.failed || example.answer === null) return "Couldn't read this name's owner history.";
+  if (!example.answer.changed) return `Same owner for the past ${DAYS} days.`;
   const date = example.answer.at ? new Date(example.answer.at) : null;
   return date && !Number.isNaN(date.getTime())
-    ? `Changed owner on ${date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}.`
-    : `Changed owner within ${DAYS} days.`;
+    ? `New owner since ${date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}.`
+    : `Changed owner in the past ${DAYS} days.`;
 }
 
 export function CheckNightScene() {
@@ -50,12 +54,14 @@ export function CheckNightScene() {
       const heading = scope.querySelector("h2");
       const timeline = gsap.timeline({ scrollTrigger: { trigger: scope, start: "top top", end: "+=210%", pin: true, pinType: "transform", scrub: SCRUB, invalidateOnRefresh: true } });
       timeline.from(heading, { y: 80, filter: "blur(16px)", autoAlpha: 0, duration: 0.5, ease: EASE.enter }, 0)
-        .to(heading, { opacity: 0.3, duration: 0.3 }, 0.6);
+        .from(scope.querySelector(".check-arch"), { y: 120, scale: 0.85, autoAlpha: 0, duration: 0.6, ease: EASE.enter }, 0)
+        .from(scope.querySelector(".check-sub"), { autoAlpha: 0, y: 20, duration: 0.3 }, 0.35)
+        .to([heading, scope.querySelector(".check-sub")], { opacity: 0.3, duration: 0.3 }, 0.6);
       cards.forEach((card, i) => {
         timeline.fromTo(card, { x: () => scope.clientWidth * 1.1, z: i % 2 ? -100 : 100, rotationY: -18, rotationZ: i % 2 ? 9 : -8 },
           { x: () => -scope.clientWidth * 1.1, z: i % 2 ? 40 : -40, rotationY: 18, rotationZ: i % 2 ? -6 : 6, duration: 1.8, ease: EASE.scrub }, 0.7 + i * 0.5);
       });
-      timeline.to(heading, { opacity: 1, duration: 0.4 }, 3.2)
+      timeline.to([heading, scope.querySelector(".check-sub")], { opacity: 1, duration: 0.4 }, 3.2)
         .from(scope.querySelector(".check-form"), { y: 32, opacity: 0, duration: 0.4 }, 3.2)
         .to({}, { duration: 0.4 });
       return () => { scope.classList.remove("check-motion"); };
@@ -73,17 +79,24 @@ export function CheckNightScene() {
   return (
     <section ref={ref} className="scene scene-check" aria-labelledby="check-night-title">
       <div className="check-surface">
-        <h2 id="check-night-title">Ask before<br />you pay.</h2>
+        <img className="check-arch" src={GLASS("arch")} alt="" aria-hidden="true" draggable={false} />
+        <div className="check-head">
+          <h2 id="check-night-title">Check a name before sending funds.</h2>
+          <p className="check-sub">
+            Wallets and apps can ask ATTO whether a NEAR name recently changed owner.{" "}
+            <Link href="/developers">Use the Check API</Link>
+          </p>
+        </div>
         <div className="check-cards" aria-label="Example ownership checks">
           {examples?.map((example, i) => <article className="check-answer" key={example.name} data-answer={example.failed || !example.answer ? "unknown" : example.answer.changed ? "changed" : "unchanged"}>
-            <div className="check-card-face"><span className="check-card-label">Ownership check · {DAYS} days</span><h3>{example.name}</h3><p>{answerText(example)}</p><CastObject kind={i === 1 ? "key" : i === 2 ? "subaccount" : "stamp"} size={88} /></div>
+            <div className="check-card-face"><span className="check-card-label">Owner changes, past {DAYS} days</span><h3>{example.name}</h3><p>{answerText(example)}</p><img className="check-card-object" src={GLASS(CARD_OBJECT[i % CARD_OBJECT.length])} alt="" aria-hidden="true" draggable={false} /></div>
           </article>)}
           {loading && <p className="check-load" role="status">Reading ownership history…</p>}
           {(error || examples?.length === 0) && <p className="check-load" role="status">The examples could not load. Enter a name below to check it.</p>}
         </div>
         <form className="check-form" onSubmit={submit}>
-          <label htmlFor="check-night-name">Which name are you paying?</label>
-          <div className="check-field"><input id="check-night-name" name="name" value={name} onChange={(event) => setName(event.target.value)} placeholder={examples?.[0]?.name ?? "Enter a name"} autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} inputMode="text" pattern=".*\S.*" maxLength={64} required /><PillButton type="submit" tone="secondary">Check</PillButton></div>
+          <label htmlFor="check-night-name">Which name are you sending funds to?</label>
+          <div className="check-field"><input id="check-night-name" name="name" value={name} onChange={(event) => setName(event.target.value)} placeholder={examples?.[0]?.name ?? "Enter a NEAR name"} autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} inputMode="text" pattern=".*\S.*" maxLength={64} required /><PillButton type="submit" tone="secondary">Check owner history</PillButton></div>
         </form>
       </div>
     </section>

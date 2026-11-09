@@ -1,11 +1,11 @@
 // The six leftovers a name can carry, and how many of each a report shows.
 import type { Report, SectionKey } from "@atto/shared";
-import type { CastKind } from "@/scenes/tag/cast";
+import type { GlassName } from "../assets";
 import type { Cord } from "@/scenes/tag/cords";
 
 export type LeftoverId = "keys" | "nfts" | "balance" | "dao" | "subs" | "mode";
 
-/** "clears": ATTO removes it in a Clean Sale. "seller": only the seller can. "travels": it goes to the buyer with the name. */
+/** "clears": ATTO removes it during the sale. "seller": the seller handles it. "travels": it goes to the buyer with the name. */
 export type LeftoverStamp = "clears" | "seller" | "travels";
 
 export interface Leftover {
@@ -13,7 +13,7 @@ export interface Leftover {
   section: SectionKey;
   name: string;
   stamp: LeftoverStamp;
-  object: CastKind;
+  object: GlassName;
   /** The cord on the tag that stands for it, if any. */
   cord: Cord["object"] | null;
   lines: [string, string];
@@ -25,6 +25,13 @@ export const STAMP_LABEL: Record<LeftoverStamp, string> = {
   travels: "Goes with the name",
 };
 
+/** The credits printed on each poster, like an album's label and release date. */
+export const CREDITS: Record<LeftoverStamp, { by: string; when: string }> = {
+  clears: { by: "ATTO", when: "During the sale" },
+  seller: { by: "The seller", when: "Before listing" },
+  travels: { by: "The buyer", when: "With the name" },
+};
+
 export const LEFTOVERS: Leftover[] = [
   {
     id: "keys",
@@ -34,8 +41,8 @@ export const LEFTOVERS: Leftover[] = [
     object: "key",
     cord: "key",
     lines: [
-      "Signing keys the old owner left in NEAR Intents.",
-      "They can move what the name holds there. ATTO removes every one in a Clean Sale.",
+      "Keys the previous owner can use to move the name's funds in NEAR Intents.",
+      "ATTO removes every one during the sale.",
     ],
   },
   {
@@ -43,11 +50,11 @@ export const LEFTOVERS: Leftover[] = [
     section: "nfts",
     name: "NFT approvals",
     stamp: "clears",
-    object: "nft",
+    object: "nft-frame",
     cord: "nft",
     lines: [
-      "Permission for another account to move the name's NFTs.",
-      "ATTO revokes them in a Clean Sale, before the name changes hands.",
+      "Permission for another account to transfer NFTs the name owns.",
+      "ATTO revokes them during the sale.",
     ],
   },
   {
@@ -55,11 +62,11 @@ export const LEFTOVERS: Leftover[] = [
     section: "intents_balances",
     name: "Intents balance",
     stamp: "travels",
-    object: "vault",
+    object: "coin",
     cord: null,
     lines: [
-      "What the name holds inside NEAR Intents.",
-      "It moves with the name's account to the buyer. The escrow checks none of it left early.",
+      "Funds the name holds in NEAR Intents.",
+      "They stay with the name and go to the buyer.",
     ],
   },
   {
@@ -70,8 +77,8 @@ export const LEFTOVERS: Leftover[] = [
     object: "seal",
     cord: "seal",
     lines: [
-      "Seats the name holds in a DAO and its shared treasury.",
-      "Only the seller or the DAO can remove them. ATTO shows every one.",
+      "Roles the name holds in a DAO, a group that votes on a shared treasury.",
+      "They're on the report, so the buyer sees them before paying.",
     ],
   },
   {
@@ -79,23 +86,23 @@ export const LEFTOVERS: Leftover[] = [
     section: "sub_accounts",
     name: "Sub-accounts",
     stamp: "seller",
-    object: "subaccount",
+    object: "subaccount-tag",
     cord: "subaccount",
     lines: [
-      "Accounts the name created under itself. Customers may still pay them.",
-      "Only the seller can hand them over or close them.",
+      "Accounts created under the name.",
+      "They're listed for the seller to hand over or close.",
     ],
   },
   {
     id: "mode",
     section: "intents_mode",
-    name: "Signed-messages mode",
+    name: "Account settings",
     stamp: "seller",
-    object: "mode",
+    object: "mode-switch",
     cord: "mode",
     lines: [
-      "An Intents setting that blocks removing keys by direct call.",
-      "Only the seller can switch it back before a sale.",
+      "An Intents setting that stops keys from being removed directly.",
+      "The seller switches it off before listing.",
     ],
   },
 ];

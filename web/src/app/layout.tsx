@@ -10,7 +10,7 @@ import { ConsentBanner, MockBar, SiteFooter, SiteHeader } from "@/components/she
 
 export const metadata: Metadata = {
   title: { default: "ATTO", template: "%s | ATTO" },
-  description: "Inspect a NEAR name and review its connections before a sale.",
+  description: "A safer way to buy and sell NEAR names. ATTO holds the payment, transfers the name, and removes the previous owner's access before the sale completes.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
