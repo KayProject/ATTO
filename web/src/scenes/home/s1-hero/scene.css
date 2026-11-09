@@ -122,27 +122,6 @@
   mix-blend-mode: soft-light;
   pointer-events: none;
 }
-.gh-tag-name {
-  position: absolute;
-  left: 20%;
-  right: 15%;
-  top: 50%;
-  transform: translateY(-50%);
-  text-align: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 10.5cqi;
-  letter-spacing: -0.035em;
-  /* Silver, to read as etched into the glass. */
-  color: #d9d9dc;
-  background: linear-gradient(170deg, #ffffff 0%, #e4e4e8 28%, #9fa1a8 52%, #f4f4f6 70%, #b9bbc2 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.6)) drop-shadow(0 2px 3px rgb(120 30 20 / 0.35));
-  white-space: nowrap;
-}
-
 .gh-cords { inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 15; }
 .gh-cords path { fill: none; stroke-linecap: round; }
 .gh-cord-glow path { stroke-width: 16; opacity: 0.35; filter: url(#gh-glow); }
@@ -184,35 +163,42 @@
 .gh-man-arm-far img { clip-path: polygon(0 0, 100% 0, 100% 38.5%, 76.5% 39.5%, 70.5% 48%, 60% 51%, 45% 58%, 30% 61.7%, 15% 63.1%, 0 63.5%); }
 .gh-man-arm-near img { clip-path: polygon(0 63.5%, 15% 63.1%, 30% 61.7%, 45% 58%, 60% 53%, 70.5% 52%, 76.5% 44%, 100% 42%, 100% 100%, 0 100%); }
 
-.gh-card { z-index: 30; }
-.gh-card-glass {
-  display: grid;
-  padding: 14px 20px;
-  border-radius: 20px;
-  min-width: 11rem;
-  white-space: nowrap;
-  font-size: clamp(0.85rem, 1.1vw, 1.05rem);
-  line-height: 1.25;
-  background: color-mix(in srgb, #fff 45%, transparent);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 0 0 1px rgb(255 255 255 / 0.65),
-    0 24px 48px -28px rgb(249 92 75 / 0.55);
-  backdrop-filter: blur(16px) saturate(1.3);
+.gh-card { z-index: 30; width: 18.5%; container-type: inline-size; }
+/* A thick paper card with a photo, pinned to the scene and slightly tilted. */
+.gh-card-photo {
+  position: relative;
+  margin: 0;
+  padding: 6cqi 6cqi 0;
+  border-radius: 9cqi;
+  background: #fffdf9;
+  box-shadow:
+    inset 0 0 0 1.4cqi rgb(255 255 255),
+    0 0 0 1px rgb(0 0 0 / 0.08),
+    0 3.5cqi 0 rgb(0 0 0 / 0.12),
+    0 10cqi 18cqi -6cqi rgb(120 40 25 / 0.35);
+  transform: rotate(var(--tilt, -4deg));
 }
-.gh-card-glass > span { grid-area: 1 / 1; }
-.gh-card-glass strong { font-family: var(--font-display); font-size: 1.9em; font-weight: 600; margin-right: 0.2em; }
+[data-card="nfts"] { --tilt: 5deg; }
+[data-card="seller"] { --tilt: -2.5deg; }
+.gh-card-pin { position: absolute; z-index: 2; top: -9cqi; right: 6cqi; width: 26cqi; height: auto; filter: drop-shadow(0 2cqi 2cqi rgb(0 0 0 / 0.3)); }
+.gh-card-shot { display: block; aspect-ratio: 1; overflow: hidden; border-radius: 5cqi; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); }
+.gh-card-shot { position: relative; }
+.gh-card-shot img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* The official NEAR Intents wordmark on a white label across the photo. */
+.gh-card-badge { position: absolute; left: 5cqi; bottom: 5cqi; display: block; padding: 2.6cqi 4cqi; border-radius: 3cqi; background: #fff; box-shadow: 0 1.5cqi 4cqi rgb(0 0 0 / 0.3); }
+.gh-card-shot .gh-card-badge img { width: 48cqi; height: auto; object-fit: contain; }
+.gh-card-caption { display: grid; padding: 4.5cqi 2cqi 6cqi; font-family: var(--font-display); font-size: 10cqi; font-weight: 600; line-height: 1.05; letter-spacing: -0.02em; color: #111; align-items: end; }
+.gh-card-caption > span { grid-area: 1 / 1; }
+.gh-card-caption strong { font-size: 1.6em; font-weight: 800; margin-right: 0.18em; color: var(--highlight); letter-spacing: -0.04em; }
 .gh-card-after { opacity: 0; }
-.gh-card-after strong { color: var(--highlight); }
-/* The right-hand card hugs the edge so its label never runs off the page. */
-.gh-card[data-card="nfts"] { left: auto !important; right: 0; }
-[data-card="seller"] .gh-card-glass { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 0 0 1.5px var(--ground-ink), 0 24px 48px -28px rgb(0 0 0 / 0.35); }
+.gh-card-after strong { display: block; }
+[data-card="seller"] .gh-card-caption strong { color: #111; }
 
 @media (max-width: 52rem) {
   .hero-stage { grid-template-columns: 1fr; align-content: start; padding-top: 96px; }
   .hero-title { font-size: clamp(2.6rem, 12vw, 3.6rem); max-width: 10ch; }
   .gh-giant { font-size: 18vw; }
-  .gh-card-glass { min-width: 0; padding: 8px 12px; font-size: 0.72rem; border-radius: 14px; }
-  .gh-card[data-card="nfts"], .gh-card[data-card="keys"] { left: auto !important; right: 0; }
-  .gh-card[data-card="seller"] { left: 0 !important; }
+  .gh-card { width: 24%; }
 }
 @media (prefers-reduced-motion: reduce) {
   .gh-card-after { display: none; }

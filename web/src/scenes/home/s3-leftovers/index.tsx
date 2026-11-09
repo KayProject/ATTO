@@ -124,18 +124,24 @@ export function LeftoversScene() {
     const poster = el.querySelector<HTMLElement>(".poster-open-frame")!;
     const others = Array.from(wall.querySelectorAll<HTMLElement>(".poster-card")).filter((c) => c !== card);
     closeRef.current?.focus({ preventScroll: true });
+    // Hang the open poster centred in the screen below the floating nav, with room for the lamp above it.
+    const navBottom = (document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0) + 12;
+    const h = poster.offsetHeight;
+    const lamp = poster.offsetWidth * 0.09;
+    const free = window.innerHeight - navBottom - 12;
+    const inFree = Math.max(0, (free - h - lamp) / 2) + lamp;
+    // Placed for where the page is heading (section flush with the top, or the wall just under the nav), not where
+    // a smooth scroll happens to be right now.
+    const section = ref.current!;
+    const fits = section.offsetHeight <= window.innerHeight + 2;
+    const wallInSection = wall.getBoundingClientRect().top - section.getBoundingClientRect().top;
+    poster.style.top = `${fits ? navBottom + inFree - wallInSection : inFree}px`;
     if (!card || window.matchMedia(REDUCED).matches) {
       gsap.set(card, { autoAlpha: 0 });
       return () => {
         gsap.set(card, { clearProps: "opacity,visibility" });
       };
     }
-    // Hang the open poster in the middle of the screen, kept within the wall, leaving room for the lamp.
-    const wallTop = wall.getBoundingClientRect().top;
-    const h = poster.offsetHeight;
-    const lamp = poster.offsetWidth * 0.09;
-    const mid = window.innerHeight / 2 + 24 - wallTop - h / 2;
-    poster.style.top = `${Math.max(lamp, Math.min(mid, wall.offsetHeight - h))}px`;
     const from = card.querySelector<HTMLElement>(".poster-frame")!.getBoundingClientRect();
     const to = poster.getBoundingClientRect();
     const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
@@ -174,6 +180,29 @@ export function LeftoversScene() {
     tl.timeScale(1.6).reverse();
   }, [openId, cardOf]);
 
+  // Opening first brings the section flush with the top of the screen, so the wall and the open poster fit.
+  const openPoster = useCallback((id: LeftoverId) => {
+    const section = ref.current;
+    const wall = wallRef.current;
+    if (!section || !wall) return setOpenId(id);
+    const fits = section.offsetHeight <= window.innerHeight + 2;
+    const navBottom = (document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0) + 12;
+    const offset = fits ? section.getBoundingClientRect().top : wall.getBoundingClientRect().top - navBottom;
+    if (Math.abs(offset) < 4) return setOpenId(id);
+    const smooth = !window.matchMedia(REDUCED).matches;
+    window.scrollTo({ top: window.scrollY + offset, behavior: smooth ? "smooth" : "auto" });
+    if (!smooth) return setOpenId(id);
+    let done = false;
+    const go = () => {
+      if (done) return;
+      done = true;
+      window.removeEventListener("scrollend", go);
+      setOpenId(id);
+    };
+    window.addEventListener("scrollend", go, { once: true });
+    window.setTimeout(go, 700);
+  }, []);
+
   useEffect(() => {
     if (!openId) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
@@ -194,17 +223,53 @@ export function LeftoversScene() {
 
   return (
     <section ref={ref} className="scene scene-leftovers" aria-labelledby={`${uid}-title`}>
-      <div className="leftovers-head">
-        <h2 id={`${uid}-title`} className="leftovers-title">
-          Know what comes with the name before you buy it.
-        </h2>
-        <p className="leftovers-note">
-          Every name gets a report of what it holds and who can still act on it. Each item is marked as one of three
-          things: ATTO clears it, the seller fixes it, or it goes to the buyer with the name.
-        </p>
-      </div>
-
       <div className="leftovers-body">
+        <div className="leftovers-side">
+          <div className="leftovers-head">
+            <h2 id={`${uid}-title`} className="leftovers-title">
+              Know what comes with the name before you buy it.
+            </h2>
+            <p className="leftovers-note">
+              Every name gets a report of what it holds and who can still act on it. Each item is marked as one of three
+              things: ATTO clears it, the seller fixes it, or it goes to the buyer with the name.
+            </p>
+          </div>
+          <aside className="leftovers-answer" aria-label={`The ${DEMO_NAME} tag`} data-answer={answer ?? undefined}>
+            <div className="answer-stage" aria-hidden="true">
+              {rig && (
+                <svg className="answer-cord" viewBox={`0 0 ${STAGE.w} ${STAGE.h}`}>
+                  <path className="answer-cord-a" d={rig.line.near} />
+                  <path className="answer-cord-b" d={rig.line.far} />
+                  {rig.knots.map((k, e) => (
+                    <g key={e} className={e ? "answer-knot answer-cord-b" : "answer-knot"}>
+                      <path d={k.loop} />
+                      <path d={k.tail} />
+                      <circle cx={k.bead.x} cy={k.bead.y} r="2.6" />
+                    </g>
+                  ))}
+                </svg>
+              )}
+              <div className="answer-tag glass-tag" style={box(TAG, STAGE)}>
+                <img src={GLASS(answer === "cut" ? "tag-clean" : "tag-cloudy")} alt="" draggable={false} />
+                <span className="tag-name">{report?.name ?? DEMO_NAME}</span>
+              </div>
+              {open && rig && (
+                <span key={open.id} className="answer-object" style={box(rig.object, STAGE)}>
+                  <img src={GLASS(open.object)} alt="" draggable={false} />
+                </span>
+              )}
+            </div>
+            <p className="leftovers-answer-line" aria-live="polite">
+              {open && answer ? `${open.name}: ${ANSWER[answer]}` : "Open a poster to see what happens to it."}
+            </p>
+            {open && answer && (
+              <div key={open.id} className="leftovers-popper answer-popper" aria-hidden="true">
+                <p className="leftovers-bubble">{ANSWER[answer]}</p>
+                <img className="leftovers-person" src={PENCIL(RESPONDER[answer])} alt="" draggable={false} />
+              </div>
+            )}
+          </aside>
+        </div>
         <div ref={wallRef} className="leftovers-wall" data-open={openId ?? undefined}>
           <ul className="leftovers-grid">
             {LEFTOVERS.map((item) => (
@@ -215,7 +280,7 @@ export function LeftoversScene() {
                     className="poster-frame"
                     aria-expanded={item.id === openId}
                     aria-controls={`${uid}-open`}
-                    onClick={() => (item.id === openId ? close() : setOpenId(item.id))}
+                    onClick={() => (item.id === openId ? close() : openPoster(item.id))}
                   >
                     <span className="sr-only">
                       {item.name}, {STAMP_LABEL[item.stamp]}, {countOf(item)}
@@ -248,6 +313,12 @@ export function LeftoversScene() {
                   <span className="poster-light poster-wash" aria-hidden="true" />
                 </div>
                 <span className="poster-light poster-wall-wash" aria-hidden="true" />
+                {answer && (
+                  <div className="leftovers-popper poster-popper" aria-hidden="true">
+                    <p className="leftovers-bubble">{ANSWER[answer]}</p>
+                    <img className="leftovers-person" src={PENCIL(RESPONDER[answer])} alt="" draggable={false} />
+                  </div>
+                )}
                 <button ref={closeRef} type="button" className="poster-close" onClick={close}>
                   Close
                 </button>
@@ -256,41 +327,6 @@ export function LeftoversScene() {
           )}
         </div>
 
-        <aside className="leftovers-answer" aria-label={`The ${DEMO_NAME} tag`} data-answer={answer ?? undefined}>
-          <div className="answer-stage" aria-hidden="true">
-            {rig && (
-              <svg className="answer-cord" viewBox={`0 0 ${STAGE.w} ${STAGE.h}`}>
-                <path className="answer-cord-a" d={rig.line.near} />
-                <path className="answer-cord-b" d={rig.line.far} />
-                {rig.knots.map((k, e) => (
-                  <g key={e} className={e ? "answer-knot answer-cord-b" : "answer-knot"}>
-                    <path d={k.loop} />
-                    <path d={k.tail} />
-                    <circle cx={k.bead.x} cy={k.bead.y} r="2.6" />
-                  </g>
-                ))}
-              </svg>
-            )}
-            <div className="answer-tag" style={box(TAG, STAGE)}>
-              <img src={GLASS(answer === "cut" ? "tag-clean" : "tag-cloudy")} alt="" draggable={false} />
-              <span className="answer-tag-name">{report?.name ?? DEMO_NAME}</span>
-            </div>
-            {open && rig && (
-              <span key={open.id} className="answer-object" style={box(rig.object, STAGE)}>
-                <img src={GLASS(open.object)} alt="" draggable={false} />
-              </span>
-            )}
-          </div>
-          <p className="leftovers-answer-line" aria-live="polite">
-            {open && answer ? `${open.name}: ${ANSWER[answer]}` : "Open a poster to see what happens to it."}
-          </p>
-          {open && answer && (
-            <div key={open.id} className="leftovers-popper" aria-hidden="true">
-              <p className="leftovers-bubble">{ANSWER[answer]}</p>
-              <img className="leftovers-person" src={PENCIL(RESPONDER[answer])} alt="" draggable={false} />
-            </div>
-          )}
-        </aside>
       </div>
     </section>
   );

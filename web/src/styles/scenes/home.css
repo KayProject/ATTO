@@ -1,4 +1,5 @@
 /* Each home scene owns its own stylesheet. */
+@import "../../scenes/home/glass-tag.css";
 @import "../../scenes/home/s0-preloader/scene.css";
 @import "../../scenes/home/s1-hero/scene.css";
 @import "../../scenes/home/s2-statement/scene.css";

@@ -120,7 +120,8 @@ main {
   padding: 8px 12px;
 }
 .site-footer {
-  padding-block: 2rem;
+  overflow: clip;
+  padding-block: 2rem 0;
   border-top: 1px solid var(--separator);
   font-size: 0.875rem;
   color: var(--muted);
@@ -131,6 +132,15 @@ main {
   gap: 1rem;
   justify-content: space-between;
 }
+/* The wordmark spans the page and fades out towards the bottom edge. */
+.footer-mark {
+  margin-top: clamp(1.5rem, 4vw, 3rem);
+  padding-inline: clamp(12px, 2vw, 32px);
+  color: var(--ground-ink);
+  mask-image: linear-gradient(to bottom, #000 25%, rgb(0 0 0 / 0.35) 65%, transparent 96%);
+  margin-bottom: -4vw;
+}
+.footer-mark svg { display: block; width: 100%; height: auto; }
 .site-footer nav {
   display: flex;
   gap: 1.5rem;

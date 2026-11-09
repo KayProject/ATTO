@@ -187,10 +187,10 @@ export function JourneyScene() {
               {hasNft && <g className="journey-cord-set"><path className="journey-cord" d={NFT_CORD.near} /><path className="journey-cord journey-cut-end" d={NFT_CORD.far} /><Knot k={NFT_KNOTS[0]} /><Knot k={NFT_KNOTS[1]} className="journey-cut-end" /></g>}
               {sellerLeft && <g className="journey-cord-set journey-cord-seller"><path className="journey-cord" d={SEAL_CORD.whole} /><Knot k={SEAL_KNOTS[0]} /><Knot k={SEAL_KNOTS[1]} /></g>}
             </svg>
-            <span className="journey-tag" style={box(TAG, B)}>
+            <span className="journey-tag glass-tag" style={box(TAG, B)}>
               <img src={GLASS("tag-cloudy")} alt="" draggable={false} />
               <img className="journey-tag-clean" src={GLASS("tag-clean")} alt="" draggable={false} />
-              <span className="journey-tag-name">{report.name}</span>
+              <span className="tag-name">{report.name}</span>
             </span>
             {hasKey && <img className="journey-obj journey-key journey-drop" style={box(KEY, B)} src={GLASS("key")} alt="" draggable={false} />}
             {hasNft && <img className="journey-obj journey-nft journey-drop" style={box(NFT, B)} src={GLASS("nft-frame")} alt="" draggable={false} />}

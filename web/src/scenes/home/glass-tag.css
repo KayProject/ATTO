@@ -1,0 +1,25 @@
+/* The name on any glass tag: silver lettering centred on the tag body, between the eyelet and the holes.
+   The tag element sets container-type so the lettering scales with the tag. */
+.glass-tag { container-type: inline-size; }
+.tag-name {
+  position: absolute;
+  left: 20%;
+  right: 15%;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 10.5cqi;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+  /* Silver, to read as etched into the glass. */
+  color: #d9d9dc;
+  background: linear-gradient(170deg, #ffffff 0%, #e4e4e8 28%, #9fa1a8 52%, #f4f4f6 70%, #b9bbc2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.6)) drop-shadow(0 2px 3px rgb(120 30 20 / 0.35));
+  pointer-events: none;
+}

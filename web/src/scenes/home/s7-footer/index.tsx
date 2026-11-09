@@ -8,6 +8,7 @@ import { gsap } from "@/motion/gsap";
 import { EASE, SCRUB } from "@/motion/tokens";
 import { useScene } from "@/motion/use-scene";
 import { GLASS, PENCIL } from "../assets";
+import { DEMO_NAME } from "../use-demo-report";
 
 export function FooterDomeScene() {
   const ref = useRef<HTMLElement>(null);
@@ -25,7 +26,10 @@ export function FooterDomeScene() {
     <section ref={ref} className="scene scene-footer" aria-labelledby="footer-dome-title">
       <div className="footer-dome" aria-hidden="true" />
       <div className="footer-cast" aria-hidden="true">
-        <img className="footer-prop footer-prop-tag" src={GLASS("tag-clean")} alt="" draggable={false} />
+        <span className="footer-prop footer-prop-tag glass-tag">
+          <img src={GLASS("tag-clean")} alt="" draggable={false} />
+          <span className="tag-name">{DEMO_NAME}</span>
+        </span>
         <img className="footer-person footer-seller" src={PENCIL("seller-walk-a")} alt="" draggable={false} />
         <img className="footer-crowd" src={PENCIL("crowd-sit")} alt="" draggable={false} />
         <img className="footer-person footer-buyer" src={PENCIL("buyer-wave")} alt="" draggable={false} />

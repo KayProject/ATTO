@@ -98,9 +98,9 @@ export const CORDS: CordSpec[] = [
 ];
 
 export const CARDS = {
-  keys: { x: 560, y: 0 },
-  nfts: { x: 800, y: 770 },
-  seller: { x: 300, y: 650 },
+  keys: { x: 462, y: 0 },
+  nfts: { x: 800, y: 606 },
+  seller: { x: 312, y: 596 },
 } satisfies Record<string, { x: number; y: number }>;
 
 /** A box-unit rectangle as CSS percentages. */

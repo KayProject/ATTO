@@ -7,6 +7,8 @@
 .footer-person { height: 112% !important; }
 .footer-prop { height: 40% !important; align-self: center; }
 .footer-buyer { transform: scaleX(-1); }
+.footer-prop-tag { position: relative; display: block; aspect-ratio: 1400 / 681; }
+.footer-cast .footer-prop-tag img { width: 100%; height: 100%; object-fit: contain; }
 .footer-dome-copy { position: relative; display: grid; justify-items: center; gap: 2.5rem; }
 .footer-dome-copy h2 { max-width: 16ch; font-size: clamp(2.5rem, 5.4vw, 5.25rem); line-height: 1; text-align: center; letter-spacing: -0.045em; text-wrap: balance; }
 .footer-dome-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }

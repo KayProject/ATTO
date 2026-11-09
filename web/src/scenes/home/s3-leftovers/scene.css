@@ -1,31 +1,37 @@
 /* Leftovers: six album posters on the wall; the open one lifts out under a picture light; the corner tag answers. */
 .scene-leftovers {
+  /* The whole section fits one screen: clear of the floating nav at the top, posters sized from the height left. */
+  --nav-clear: 6.5rem;
+  --wall-gap: clamp(16px, 2vw, 28px);
+  --side: clamp(240px, 24vw, 320px);
+  --pw: min(
+    250px,
+    calc((100svh - var(--nav-clear) - 28px - var(--wall-gap)) / 2 / 1.46),
+    calc((100vw - 2 * var(--scene-gutter) - var(--side) - clamp(32px, 4vw, 64px) - 2 * var(--wall-gap)) / 3)
+  );
   position: relative;
+  display: grid;
+  align-content: center;
+  min-height: 100svh;
   background: var(--ground);
   color: var(--ground-ink);
-  padding: clamp(48px, 8vh, 96px) var(--scene-gutter) clamp(96px, 18vh, 200px);
+  padding: var(--nav-clear) var(--scene-gutter) 28px;
   overflow: clip;
 }
-.leftovers-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  justify-content: space-between;
-  gap: 16px 48px;
-  margin-bottom: clamp(32px, 6vh, 64px);
-}
-.leftovers-title { max-width: 16ch; font-size: clamp(2.25rem, 4.6vw, 4.5rem); line-height: 1; letter-spacing: -0.04em; font-weight: 600; text-wrap: balance; }
-.leftovers-note { max-width: 40ch; font-size: 1rem; line-height: 1.5; opacity: 0.8; }
-
-.leftovers-body { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: clamp(24px, 4vw, 56px); align-items: start; }
+/* While a poster is open it may hang past the section's edge, so the section stops clipping and sits above the next. */
+.scene-leftovers:has(.poster-open) { overflow: visible; z-index: 3; }
+.leftovers-body { display: grid; grid-template-columns: var(--side) auto; justify-content: center; gap: clamp(32px, 4vw, 64px); align-items: center; }
+.leftovers-side { display: grid; gap: clamp(16px, 2.6vh, 28px); align-content: center; }
+.leftovers-head { display: grid; gap: 14px; }
+.leftovers-title { max-width: 14ch; font-size: clamp(1.9rem, 2.9vw, 3rem); line-height: 1; letter-spacing: -0.04em; font-weight: 600; text-wrap: balance; }
+.leftovers-note { max-width: 36ch; font-size: 0.95rem; line-height: 1.45; opacity: 0.8; }
 .leftovers-grid {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 250px));
-  justify-content: center;
-  gap: clamp(20px, 3vw, 44px);
+  grid-template-columns: repeat(3, var(--pw));
+  gap: var(--wall-gap);
   align-items: start;
 }
 
@@ -96,6 +102,12 @@
 .poster-list, .poster-credits { display: grid; gap: 1.2cqi; align-content: start; }
 .poster-track-no { opacity: 0.55; }
 .poster-credit b { display: block; font-weight: 700; }
+@container (max-width: 150px) {
+  .poster-tracks, .poster-sign, .poster-mark { display: none; }
+  .poster-title { font-size: 9.6cqi; margin-top: 6cqi; }
+  .poster-artist { font-size: 6.4cqi; margin-top: 1cqi; }
+  .poster-rule { margin-top: 4cqi; }
+}
 .poster-mark { justify-self: center; font-family: var(--font-display); font-weight: 800; font-size: 3.2cqi; letter-spacing: -0.04em; }
 /* Glazing: the acrylic in front of the print. */
 .poster-glaze {
@@ -121,7 +133,7 @@
   left: 0;
   right: 0;
   margin-inline: auto;
-  width: min(100%, 540px, calc((100svh - 190px) / 1.46));
+  width: min(100%, 540px, calc((100svh - var(--nav-clear) - 36px) / 1.55));
   container-type: inline-size;
   will-change: transform;
 }
@@ -194,13 +206,17 @@
 }
 .poster-close:focus-visible { outline: 2px solid var(--highlight); outline-offset: 3px; }
 
-.leftovers-answer { position: sticky; top: 96px; display: grid; gap: 12px; justify-items: start; }
+.leftovers-answer { display: grid; gap: 10px; justify-items: start; max-width: var(--side); }
+/* On wide screens the person answers beside the open poster; on narrow ones inside the answer bar. */
+.poster-popper { position: absolute; left: calc(100% + 12px); bottom: 0; width: max-content; margin: 0; flex-direction: column-reverse; align-items: flex-start; }
+.poster-popper .leftovers-bubble { max-width: 14ch; margin: 0 0 8px; }
+.leftovers-popper.answer-popper { display: none; }
 .leftovers-answer-line { font-size: 0.9rem; line-height: 1.35; min-height: 2.7em; }
 
 
 /* The scene's confirmation: a person pops up with a speech bubble. */
 .leftovers-popper { display: flex; align-items: flex-end; gap: 4px; margin-top: 8px; }
-.leftovers-person { display: block; flex: none; height: 170px; width: auto; }
+.leftovers-person { display: block; flex: none; height: clamp(120px, 22vh, 170px); width: auto; }
 .leftovers-bubble {
   position: relative;
   max-width: 15ch;
@@ -227,8 +243,20 @@
 }
 
 @media (max-width: 64rem) {
-  .leftovers-body { grid-template-columns: minmax(0, 1fr); }
+  .scene-leftovers {
+    --pw: min(250px, calc((100vw - 2 * var(--scene-gutter) - 2 * var(--wall-gap)) / 3));
+    display: block;
+    min-height: 0;
+    padding-bottom: 48px;
+  }
+  .leftovers-body { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .leftovers-side { display: contents; }
+  .leftovers-head { order: 0; }
+  .leftovers-wall { order: 1; justify-self: center; }
+  .poster-popper { display: none; }
+  .leftovers-popper.answer-popper { display: flex; }
   .leftovers-answer {
+    max-width: none;
     position: sticky;
     top: auto;
     bottom: 12px;
@@ -246,7 +274,6 @@
   .leftovers-popper { position: absolute; right: 8px; bottom: 100%; margin: 0 0 -6px; }
   .leftovers-person { height: 110px; }
   .leftovers-bubble { margin-bottom: 64px; }
-  .leftovers-grid { grid-template-columns: repeat(2, minmax(0, 250px)); justify-content: center; }
   .poster-close { left: auto; right: 0; top: calc(100% + 12px); }
 }
 @media (max-width: 30rem) {
@@ -256,7 +283,6 @@
 /* The answer: the glass tag with the open item hanging from its top hole; the cord snaps or stays tied. */
 .answer-stage { position: relative; width: 100%; aspect-ratio: 280 / 200; }
 .answer-tag img { display: block; width: 100%; height: 100%; object-fit: fill; }
-.answer-tag-name { position: absolute; left: 24%; top: 36%; font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; color: #fff; text-shadow: 0 1px 6px rgb(160 50 30 / 0.5); }
 .answer-cord { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; z-index: 1; }
 .answer-object { z-index: 2; }
 .answer-knot path { stroke-width: 2.4; }

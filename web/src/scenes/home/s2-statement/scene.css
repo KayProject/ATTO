@@ -1,6 +1,7 @@
 /* Statement: one large sentence on the ground, centred, with a highlighted ending and a dotted link. */
 .scene-statement {
   position: relative;
+  overflow: clip;
   background: var(--sky);
   color: var(--sky-ink);
 }

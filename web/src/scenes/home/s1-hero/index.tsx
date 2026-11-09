@@ -20,6 +20,8 @@ function plural(count: number, one: string, many: string) {
   return count === 1 ? one : many;
 }
 
+const CARD_PHOTO = { keys: "intents", nfts: "nft", seller: "seller" } as const;
+
 // Resting cord shapes, so the first paint and reduced motion show the full scene.
 const REST = CORDS.map((spec, i) => cordPaths(spec, { t: 0, cut: 0, fall: { x: 0, y: 0 } }, i * 1.7));
 
@@ -182,13 +184,25 @@ export function HeroScene() {
     };
   });
 
+  // Pinned photo cards: what the tag is still tied to, shown as a real picture with its count underneath.
   const card = (key: "keys" | "nfts" | "seller", before: React.ReactNode, after?: React.ReactNode) => (
     <div className="gh-card" data-card={key} style={{ left: `${(CARDS[key].x / BOX.w) * 100}%`, top: `${(CARDS[key].y / BOX.h) * 100}%` }}>
       <div className="gh-card-drift">
-        <div className="gh-card-glass">
-          <span className="gh-card-before">{before}</span>
-          {after ? <span className="gh-card-after">{after}</span> : null}
-        </div>
+        <figure className="gh-card-photo">
+          <img className="gh-card-pin" src="/cards/pin.webp" alt="" draggable={false} />
+          <span className="gh-card-shot">
+            <img src={`/cards/${CARD_PHOTO[key]}.webp`} alt="" draggable={false} />
+            {key === "keys" ? (
+              <span className="gh-card-badge">
+                <img src="/cards/near-intents.svg" alt="NEAR Intents" draggable={false} />
+              </span>
+            ) : null}
+          </span>
+          <figcaption className="gh-card-caption">
+            <span className="gh-card-before">{before}</span>
+            {after ? <span className="gh-card-after">{after}</span> : null}
+          </figcaption>
+        </figure>
       </div>
     </div>
   );
@@ -236,7 +250,7 @@ export function HeroScene() {
               <img className="gh-tag-img gh-tag-cloudy" src={IMG("tag-cloudy")} alt="" draggable={false} />
               <img className="gh-tag-img gh-tag-clean" src={IMG("tag-clean")} alt="" draggable={false} />
               <span className="gh-shine" style={{ maskImage: `url(${IMG("tag-clean")})` }} />
-              <span className="gh-tag-name">{report?.name ?? DEMO_NAME}</span>
+              <span className="tag-name">{report?.name ?? DEMO_NAME}</span>
             </div>
 
             <svg className="gh-cords" viewBox={`0 0 ${BOX.w} ${BOX.h}`} preserveAspectRatio="none">
