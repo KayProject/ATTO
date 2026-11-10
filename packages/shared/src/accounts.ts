@@ -16,7 +16,7 @@ export const MAINNET: NetworkAccounts = {
   registry: "registry.hos",
   hosExtension: "ext.hos",
   intents: "intents.near",
-  escrow: null,
+  escrow: "escrow.jadonamite.near",
   keeper: null,
 };
 

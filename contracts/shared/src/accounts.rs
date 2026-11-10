@@ -15,6 +15,6 @@ pub const MAINNET: Network = Network {
     registry: "registry.hos",
     hos_extension: "ext.hos",
     intents: "intents.near",
-    escrow: None,
+    escrow: Some("escrow.jadonamite.near"),
     keeper: None,
 };
