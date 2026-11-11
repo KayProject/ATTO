@@ -94,6 +94,25 @@ export interface OwnerView {
   can_renew: boolean;
   grant_cap: string;
   report: Report;
+  /** Wallet networks only: the one-off deposit that sets Keeper up for this name. Absent once it is set up. */
+  setup_cost?: string;
+}
+
+/** Wallet networks only: what the browser needs to build Keeper transactions for a name. */
+export interface KeeperState {
+  keeper: string;
+  owner: string;
+  lease_end_ns: string;
+  rent: string;
+  now: string;
+  reserve: Reserve | null;
+  collector: string | null;
+  setup_cost: string;
+  /** The name's wallet already lets the collector act. */
+  extension_enabled: boolean;
+  /** The name's wallet holds an unexpired spending cap for the collector. */
+  granted: boolean;
+  grant_expires_ns: string;
 }
 
 export interface HandOverResult {
@@ -128,4 +147,6 @@ export interface AttoClient {
   topUp(name: string, amount: string): Promise<void>;
   withdraw(name: string, amount: string): Promise<void>;
   renew(name: string): Promise<void>;
+  /** Wallet networks only: pays the one-off deposit that creates the name's reserve. */
+  setUpKeeper?(name: string): Promise<void>;
 }

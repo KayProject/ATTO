@@ -58,7 +58,7 @@ NEXT_PUBLIC_ATTO_BACKEND=testnet pnpm --filter web dev
 
 The site reads the deployed escrow and registry, and every transaction is approved in your own wallet: connect one from the bar at the top. No key is held by the site. After the seller hands the name over, the same wallet approves the remaining steps (post the final report, clear, verify, complete), one approval each. `mainnet` works the same way against `escrow.jadonamite.near` and `registry.hos`.
 
-Testnet runs ATTO's own copy of the registry and Intents under `attotest.testnet`, with the escrow at `escrow.attotest.testnet` and the Keeper at `keeper.attotest.testnet`. Testnet has no transaction index, so the NFT, DAO role, sub-account and history sections of a report read as unavailable there. Name history and the Keeper screens are not served in either wallet mode yet.
+Testnet runs ATTO's own copy of the registry and Intents under `attotest.testnet`, with the escrow at `escrow.attotest.testnet` and the Keeper at `keeper.attotest.testnet`. Testnet has no transaction index, so the NFT, DAO role, sub-account and history sections of a report read as unavailable there. Name history is read from the chain on each request: the registry's events plus the escrow's sales. The owner page sets up, tops up, withdraws from and switches Keeper through the owner's wallet. Keeper is deployed on testnet only, so the owner page is closed on mainnet.
 
 ### Services
 

@@ -4,15 +4,27 @@ import { z } from "zod";
 import {
   CLEARING_TIMEOUT_NS,
   RECLAIM_AFTER_NS,
+  RENEW_WINDOW_NS,
   accountsFromEnv,
   type Listing,
   type Report,
+  type Reserve,
 } from "@atto/shared";
-import { Rpc, titleSearch } from "@atto/title-search";
+import { Rpc, nsDate, splitName, titleSearch, type RegistryName } from "@atto/title-search";
+import { changedAnswer } from "../check";
 import { liveReport } from "../live";
 import { NETWORK } from "../backend";
 import { Refusal } from "../mock/world";
-import type { ChangedAnswer, HistoryEvent, OwnedName, SaleView } from "../types";
+import {
+  NOT_OWNER,
+  type ChangedAnswer,
+  type HistoryEvent,
+  type HistoryKind,
+  type KeeperState,
+  type OwnedName,
+  type OwnerView,
+  type SaleView,
+} from "../types";
 
 const MAX_LISTINGS = 200;
 const MAX_OWNED = 20;
@@ -22,7 +34,12 @@ function context() {
   if (!NETWORK) throw new Refusal("No NEAR network is configured for wallet mode.");
   const { accounts } = accountsFromEnv({ ...process.env, ATTO_NETWORK: NETWORK });
   if (!accounts.escrow) throw new Refusal(`The escrow isn't deployed on ${NETWORK}.`);
-  return { rpc: new Rpc(accounts, NETWORK), escrow: accounts.escrow, registry: accounts.registry };
+  return {
+    rpc: new Rpc(accounts, NETWORK),
+    escrow: accounts.escrow,
+    registry: accounts.registry,
+    keeper: accounts.keeper,
+  };
 }
 type Ctx = ReturnType<typeof context>;
 
@@ -49,14 +66,206 @@ async function finalReport(ctx: Ctx, name: string): Promise<Report> {
   return titleSearch(name, { rpc: ctx.rpc, final: true });
 }
 
-const noHistory: (name: string) => Promise<HistoryEvent[]> = async () => [];
-const noChange: (name: string, days: number) => Promise<ChangedAnswer | null> = async () => null;
+const YEAR_NS = 365n * 24n * 3600n * 1_000_000_000n;
+const REGISTRY_KINDS: Record<string, HistoryKind> = {
+  sub_account_rented: "minted",
+  sub_account_re_rented: "re_rented",
+  sub_account_transferred: "transferred",
+  sub_account_recovered: "transferred",
+  sub_account_reclaimed: "reclaimed",
+  sub_account_renewed: "renewed",
+  nft_mint: "minted",
+  nft_transfer: "transferred",
+};
+type Draft = Omit<HistoryEvent, "id">;
+const text = (value: unknown) => (typeof value === "string" && value ? value : null);
+
+/** Ownership events from the report's transaction history, where the network has an index. */
+function indexedEvents(name: string, report: Report | null): Draft[] | null {
+  const section = report?.sections.history;
+  if (!section || section.status === "unavailable") return null;
+  const events: Draft[] = [];
+  // One transfer logs both a registry event and an NFT event, so each transaction counts once per kind.
+  const seen = new Set<string>();
+  for (const line of section.lines) {
+    const d = line.data as Record<string, unknown> | undefined;
+    const kind = d && REGISTRY_KINDS[String(d.event)];
+    const at = text(d?.block_time) ?? line.label.split(" at ")[1];
+    if (!d || !kind || !Number.isFinite(Date.parse(at ?? ""))) continue;
+    const once = `${String(d.transaction_hash)}:${kind}`;
+    if (seen.has(once)) continue;
+    seen.add(once);
+    events.push({
+      token_id: name,
+      kind,
+      from_owner: text(d.old_owner_id) ?? text(d.from),
+      to_owner: text(d.new_owner_id) ?? text(d.owner_id) ?? text(d.to) ?? text(d.owner),
+      block_time: new Date(at!).toISOString(),
+      tx_hash: text(d.transaction_hash) ?? "",
+    });
+  }
+  return events;
+}
+
+/** The registry's own feed of recent events. It names no owners and keeps a limited number of entries. */
+async function registryEvents(ctx: Ctx, name: string): Promise<Draft[]> {
+  const rows = await ctx.rpc.view<{ event: string; block_timestamp: string }[]>(ctx.registry, "list_recent_activity", {
+    from_index: 0,
+    limit: 100,
+    account: name,
+  });
+  return rows.flatMap((row) => {
+    const kind = REGISTRY_KINDS[row.event];
+    return kind
+      ? [{ token_id: name, kind, from_owner: null, to_owner: null, block_time: nsDate(row.block_timestamp), tx_hash: "" }]
+      : [];
+  });
+}
+
+/**
+ * A name's history, read from the chain on each request. A sale moves the name into the escrow
+ * and out again, so those two transfers are folded into one Clean Sale entry.
+ */
+async function history(ctx: Ctx, name: string): Promise<{ events: HistoryEvent[]; complete: boolean }> {
+  const [report, listings] = await Promise.all([liveReport(name).catch(() => null), allListings(ctx)]);
+  const indexed = indexedEvents(name, report);
+  let events = indexed ?? (await registryEvents(ctx, name));
+  const ms = (e: Draft) => Date.parse(e.block_time);
+  events.sort((a, b) => ms(a) - ms(b));
+  let rented = false;
+  for (const e of events) {
+    if (e.kind === "minted" && rented) e.kind = "re_rented";
+    if (e.kind === "minted") rented = true;
+  }
+  for (const l of listings) {
+    if (l.token_id !== name || !l.name_at) continue;
+    const held = Number(BigInt(l.name_at) / 1_000_000n);
+    const transfers = events.filter((e) => e.kind === "transferred");
+    const into = transfers.find((e) => Math.abs(ms(e) - held) < 60_000);
+    const out = into && transfers.find((e) => ms(e) > ms(into));
+    const done = l.state === "Completed";
+    if (!done && l.state !== "Reversed") {
+      events = events.filter((e) => e !== into);
+      continue;
+    }
+    events = events.filter((e) => e !== into && e !== out);
+    if (!done) continue;
+    events.push({
+      token_id: name,
+      kind: "sold_clean",
+      from_owner: l.seller,
+      to_owner: l.buyer,
+      block_time: out?.block_time ?? new Date(held).toISOString(),
+      tx_hash: out?.tx_hash ?? "",
+      sale: {
+        listing_id: l.id,
+        price: l.price,
+        accepted_report: null,
+        final_report: null,
+        keys_removed: l.manifest?.intents_keys ?? [],
+        nfts_revoked: l.manifest?.nfts ?? [],
+      },
+    });
+  }
+  events.sort((a, b) => ms(b) - ms(a));
+  return {
+    events: events.map((e, i) => ({ ...e, id: events.length - i })),
+    // The feed is complete from the day the name was first rented, if it still holds that entry.
+    complete: indexed !== null || rented,
+  };
+}
+
+async function registered(ctx: Ctx, name: string) {
+  const found = await ctx.rpc.view<RegistryName | null>(ctx.registry, "get_sub_account", splitName(name));
+  if (!found) throw new Refusal(`${name} isn't a rented name in the registry.`);
+  return found;
+}
+
+/** The next year's rent in yocto. Falls back to the registry's last exchange rate when it won't quote. */
+async function nextRent(ctx: Ctx, name: string, annualRentUsdMicro: string) {
+  try {
+    const quote = await ctx.rpc.view<{ rent_yocto: string }>(ctx.registry, "get_rent_price", splitName(name));
+    return quote.rent_yocto;
+  } catch {
+    const rate = BigInt(await ctx.rpc.view<string>(ctx.registry, "get_near_usd_rate"));
+    return ((BigInt(annualRentUsdMicro) * 10n ** 24n) / rate).toString();
+  }
+}
+
+/** Where a name's Keeper stands: its reserve, and what its wallet lets the collector do. */
+async function keeperState(ctx: Ctx, caller: string, name: string): Promise<KeeperState> {
+  if (!ctx.keeper) throw new Refusal(`Keeper isn't deployed on ${NETWORK} yet.`);
+  const [name_, reserve, config, now] = await Promise.all([
+    registered(ctx, name),
+    ctx.rpc.view<(Reserve & { collector: string; ready: boolean }) | null>(ctx.keeper, "get_reserve", { name }),
+    ctx.rpc.view<{ collector_setup_deposit: string }>(ctx.keeper, "config"),
+    chainNow(ctx),
+  ]);
+  if (name_.owner !== caller) throw new Refusal(NOT_OWNER);
+  const status = reserve?.ready
+    ? await ctx.rpc.view<{ extension_enabled: boolean; grant: { expires_at: string } | null }>(
+        name,
+        "hos_agent_status",
+        { extension: reserve.collector },
+      )
+    : null;
+  const rent = await nextRent(ctx, name, name_.annual_rent);
+  return {
+    keeper: ctx.keeper,
+    owner: name_.owner,
+    lease_end_ns: name_.expires_at,
+    rent,
+    now,
+    reserve: reserve?.ready ? reserve : null,
+    collector: reserve?.ready ? reserve.collector : null,
+    setup_cost: config.collector_setup_deposit,
+    extension_enabled: status?.extension_enabled ?? false,
+    granted: !!status?.grant && BigInt(status.grant.expires_at) > BigInt(now),
+    grant_expires_ns: (BigInt(now) + YEAR_NS).toString(),
+  };
+}
+
+async function ownerView(ctx: Ctx, caller: string, name: string): Promise<OwnerView> {
+  const [state, report] = await Promise.all([keeperState(ctx, caller, name), titleSearch(name, { rpc: ctx.rpc })]);
+  const reserve: Reserve = state.reserve ?? {
+    name,
+    balance: "0",
+    enabled: false,
+    share_bps: 0,
+    puller: caller,
+    last_spent_seen: "0",
+  };
+  // A renewal attaches the rent plus a 0.5% margin, which the registry refunds.
+  const renewal_cost = (BigInt(state.rent) + BigInt(state.rent) / 200n).toString();
+  const missing = BigInt(renewal_cost) - BigInt(reserve.balance);
+  const opens = BigInt(state.lease_end_ns) - RENEW_WINDOW_NS;
+  return {
+    name,
+    owner: state.owner,
+    lease_end: nsDate(state.lease_end_ns),
+    rent: state.rent,
+    reserve,
+    renewal_cost,
+    shortfall: missing > 0n ? missing.toString() : "0",
+    renew_window_opens: nsDate(opens.toString()),
+    can_renew: !!state.reserve && reserve.enabled && BigInt(state.now) >= opens && missing <= 0n,
+    grant_cap: state.rent,
+    report,
+    setup_cost: state.reserve ? undefined : state.setup_cost,
+  };
+}
 
 export const mainnet = {
   getReport: (name: string) => liveReport(name),
-  // History needs the follower's database, which this deployment doesn't have.
-  getHistory: noHistory,
-  changedOwner: noChange,
+  getHistory: async (name: string) => (await history(context(), name)).events,
+  async changedOwner(name: string, days: number): Promise<ChangedAnswer | null> {
+    const { events, complete } = await history(context(), name);
+    if (!events.length) return null;
+    const answer = changedAnswer(events, days, new Date());
+    return answer.changed || complete ? answer : null;
+  },
+  getOwnerView: (caller: string, name: string) => ownerView(context(), caller, name),
+  keeperState: (caller: string, name: string) => keeperState(context(), caller, name),
   sampleNames: async () => [],
 
   async config() {
@@ -176,4 +385,6 @@ export const MAINNET_METHODS: Record<string, Handler> = {
   getSale: method(byId, (c, a) => mainnet.getSale(c, a.id)),
   listingFor: method(z.object({ token_id: token }), (_, a) => mainnet.listingFor(a.token_id)),
   finalReport: method(byName, (_, a) => mainnet.finalReport(a.name)),
+  getOwnerView: method(byName, (c, a) => mainnet.getOwnerView(c, a.name)),
+  keeperState: method(byName, (c, a) => mainnet.keeperState(c, a.name)),
 };

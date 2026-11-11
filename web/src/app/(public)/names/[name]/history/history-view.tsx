@@ -45,9 +45,11 @@ function Event({ event }: { event: HistoryEvent }) {
         {formatDateTime(event.block_time)}
         {parties.length ? `, ${parties.join(" ")}` : ""}
       </p>
-      <p className="small soft">
-        Transaction <code title={event.tx_hash}>{shortHash(event.tx_hash)}</code>
-      </p>
+      {event.tx_hash ? (
+        <p className="small soft">
+          Transaction <code title={event.tx_hash}>{shortHash(event.tx_hash)}</code>
+        </p>
+      ) : null}
       {event.note ? <p>{event.note}</p> : null}
       {sale ? (
         <div className="stack">

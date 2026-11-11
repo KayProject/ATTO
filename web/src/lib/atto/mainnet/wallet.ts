@@ -59,15 +59,25 @@ function reason(error: unknown) {
   return text.match(/Smart contract panicked: ([^"\n]+)/)?.[1] ?? text.slice(0, 300);
 }
 
-/** Asks the connected wallet to approve one contract call. The visitor pays its gas and deposit. */
-export async function walletCall(receiverId: string, methodName: string, args: object, deposit = "0") {
+export interface WalletCall {
+  methodName: string;
+  args: object;
+  deposit?: string;
+  gas?: string;
+}
+
+/** Asks the connected wallet to approve one transaction of one or more calls. The visitor pays its gas and deposits. */
+export async function walletSend(receiverId: string, calls: WalletCall[]) {
   if (!account) throw new Error("Connect your wallet first.");
   try {
     const { wallet } = await (await getConnector()).getConnectedWallet();
     await wallet.signAndSendTransaction({
       signerId: account,
       receiverId,
-      actions: [{ type: "FunctionCall", params: { methodName, args, gas: GAS, deposit } }],
+      actions: calls.map(({ methodName, args, deposit = "0", gas = GAS }) => ({
+        type: "FunctionCall" as const,
+        params: { methodName, args, gas, deposit },
+      })),
     });
   } catch (error) {
     throw new Error(reason(error));

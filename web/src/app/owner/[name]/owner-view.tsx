@@ -171,6 +171,24 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
         )}
       </section>
 
+      {view.setup_cost ? (
+        <section className="ticket-panel task-panel stack">
+          <h2>Set up Keeper</h2>
+          <p>
+            Keeper needs a small account of its own for this name before it can hold a reserve. Setting it up costs{" "}
+            {formatNear(view.setup_cost)} NEAR once, paid from your wallet. The account has no keys, so nobody can
+            move what it holds except the Keeper contract.
+          </p>
+          <button
+            type="button"
+            className="button button-primary"
+            disabled={busy}
+            onClick={() => void run(() => atto.setUpKeeper!(name))}
+          >
+            Set up Keeper
+          </button>
+        </section>
+      ) : (
       <Tabs defaultValue="topup">
         <TabsList aria-label="Manage reserve">
           <TabsTrigger value="topup">Top up</TabsTrigger>
@@ -235,6 +253,7 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
           </div>
         </TabsContent>
       </Tabs>
+      )}
 
       <section className="stack">
         <h2>Latest Title Search</h2>

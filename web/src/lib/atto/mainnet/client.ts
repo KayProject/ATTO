@@ -1,33 +1,29 @@
 // AttoClient on NEAR mainnet: reads come from the server, every write is approved in the visitor's wallet.
 import { driveSale, type SaleDriver } from "@atto/bot";
 import type { Listing, Report } from "@atto/shared";
-import type { AttoClient, SaleView } from "../types";
-import { walletCall } from "./wallet";
+import type { AttoClient, KeeperState, OwnerView, SaleView } from "../types";
+import { walletSend, type WalletCall } from "./wallet";
 
 type Call = <T>(method: string, args?: object) => Promise<T>;
 
 const LISTING_DEPOSIT = "50000000000000000000000";
 const CLEAR_DEPOSIT = "10000000000000000000000";
-const KEEPER_LATER = "Keeper isn't deployed on mainnet yet.";
+const NAME_CALL_GAS = "80000000000000";
 
-type Sign = (receiverId: string, methodName: string, args: object, deposit?: string) => Promise<unknown>;
+type Sign = (receiverId: string, calls: WalletCall[]) => Promise<unknown>;
 
-/** `sign` defaults to the visitor's wallet; the testnet proof script swaps in a testnet key. */
-export function mainnetClient(call: Call, sign: Sign = walletCall): AttoClient {
+/** `sign` defaults to the visitor's wallet; proof scripts swap in a testnet key. */
+export function mainnetClient(call: Call, sign: Sign = walletSend): AttoClient {
   let config: Promise<{ escrow: string; registry: string }> | null = null;
   const contracts = () => (config ??= call("config"));
   const escrowCall = async (method: string, args: object, deposit?: string): Promise<void> => {
-    await sign((await contracts()).escrow, method, args, deposit);
+    await sign((await contracts()).escrow, [{ methodName: method, args, deposit }]);
   };
   const sale = async (id: string) => {
     const view = await call<SaleView | null>("getSale", { id });
     if (!view) throw new Error("No such sale.");
     return view;
   };
-  const keeperLater = async (): Promise<never> => {
-    throw new Error(KEEPER_LATER);
-  };
-
   /**
    * Runs one escrow call on a sale, then waits until reads show the sale changed.
    * Reads trail a write by a block or two, so the next step would otherwise act on the old state.
@@ -45,6 +41,33 @@ export function mainnetClient(call: Call, sign: Sign = walletCall): AttoClient {
     }
     return (await sale(id)).listing;
   }
+
+  const keeper = (name: string) => call<KeeperState>("keeperState", { name });
+  const ownerView = (name: string) => call<OwnerView>("getOwnerView", { name });
+  // The report is rebuilt on every read, so it is left out when checking whether a write has landed.
+  const ownerFacts = async (name: string) => JSON.stringify({ ...(await ownerView(name)), report: null });
+  /** Runs one Keeper write, then waits until the owner page's reads show it. */
+  async function ownerAct(name: string, write: () => Promise<unknown>) {
+    const before = await ownerFacts(name);
+    await write();
+    for (let i = 0; i < 8 && (await ownerFacts(name)) === before; i++) await new Promise((r) => setTimeout(r, 1200));
+  }
+  /** One call on the name's own account, which only its owner can make. */
+  const nameCall = (methodName: string, args: object): WalletCall => ({
+    methodName,
+    args,
+    deposit: "1",
+    gas: NAME_CALL_GAS,
+  });
+  /** Has the name itself call a contract, for the methods that only answer to the name. */
+  const asName = (receiver_id: string, function_name: string, args: object, gas: string) =>
+    nameCall("w_execute_extension", {
+      request: {
+        external: [
+          { receiver_id, actions: [{ action: "function_call", payload: { function_name, args: btoa(JSON.stringify(args)), gas } }] },
+        ],
+      },
+    });
 
   /** Posts the final report, clears, verifies and completes, one wallet approval per step. */
   async function finish(id: string) {
@@ -95,12 +118,13 @@ export function mainnetClient(call: Call, sign: Sign = walletCall): AttoClient {
     async handOver(id) {
       const { listing } = await sale(id);
       const { escrow, registry } = await contracts();
-      await sign(
-        registry,
-        "nft_transfer_call",
-        { receiver_id: escrow, token_id: listing.token_id, approval_id: null, memo: null, msg: id },
-        "1",
-      );
+      await sign(registry, [
+        {
+          methodName: "nft_transfer_call",
+          args: { receiver_id: escrow, token_id: listing.token_id, approval_id: null, memo: null, msg: id },
+          deposit: "1",
+        },
+      ]);
       // A refused hand-over leaves the sale untouched, so no change within the wait means it bounced.
       if ((await moved(id, JSON.stringify(listing))).state !== "NameHeld")
         return { accepted: false, reason: "the buyer hasn't paid, so the name went back to you" };
@@ -116,10 +140,52 @@ export function mainnetClient(call: Call, sign: Sign = walletCall): AttoClient {
     reverse: (id) => act(id, "reverse", { listing_id: id }),
     finishSale: finish,
 
-    getOwnerView: keeperLater,
-    configureKeeper: keeperLater,
-    topUp: keeperLater,
-    withdraw: keeperLater,
-    renew: keeperLater,
+    getOwnerView: ownerView,
+    async setUpKeeper(name) {
+      const state = await keeper(name);
+      if (state.reserve) return;
+      await ownerAct(name, () =>
+        sign(state.keeper, [{ methodName: "prepare", args: { name }, deposit: state.setup_cost }]),
+      );
+    },
+    async configureKeeper(name, enabled, share_bps) {
+      const state = await keeper(name);
+      if (!state.collector) throw new Error("Set Keeper up for this name first.");
+      const { collector } = state;
+      // The name's wallet has to accept the collector and cap what it can move before Keeper is switched on.
+      const calls: WalletCall[] = [];
+      if (!state.extension_enabled)
+        calls.push(
+          nameCall("w_execute_extension", {
+            request: { internal: [{ op: "add_extension", payload: { account_id: collector } }] },
+          }),
+        );
+      if (!state.granted)
+        calls.push(
+          nameCall("hos_grant_spend", {
+            extension: collector,
+            receivers: [collector],
+            budget_yocto: state.rent,
+            tokens: [],
+            items: [],
+            expires_at: state.grant_expires_ns,
+          }),
+        );
+      calls.push(asName(state.keeper, "configure", { enabled, share_bps, puller: state.owner }, "20000000000000"));
+      await ownerAct(name, () => sign(name, calls));
+    },
+    async topUp(name, amount) {
+      const state = await keeper(name);
+      if (!state.reserve) throw new Error("Set Keeper up for this name first.");
+      await ownerAct(name, () => sign(state.keeper, [{ methodName: "top_up", args: { name }, deposit: amount }]));
+    },
+    async withdraw(name, amount) {
+      const state = await keeper(name);
+      await ownerAct(name, () => sign(name, [asName(state.keeper, "withdraw", { amount }, "50000000000000")]));
+    },
+    async renew(name) {
+      const state = await keeper(name);
+      await ownerAct(name, () => sign(state.keeper, [{ methodName: "renew", args: { name } }]));
+    },
   };
 }
