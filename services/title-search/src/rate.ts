@@ -44,8 +44,13 @@ export function rate(
       )
       .sort(),
   };
+  // These sections come from the transaction indexer. Testnet has no such index, so they are
+  // always unavailable there: they stay visible as unavailable and don't block a sale the
+  // escrow can still verify on chain. Every other network keeps the stricter rule.
+  const INDEXED_SECTIONS: SectionKey[] = ["nfts", "dao_roles", "sub_accounts", "history"];
   const incomplete = Object.entries(sections)
     .filter(([key, s]) => s.status === "unavailable" && key !== "keeper_reserve")
+    .filter(([key]) => !(network === "testnet" && INDEXED_SECTIONS.includes(key as SectionKey)))
     .map(([, s]) => s.title);
   const blocked = ["owner", "lease", "wallet", "name_keys", "intents_mode"].some((key) =>
     sections[key as SectionKey].lines.some((line) => line.rating === "NeedsSeller"),

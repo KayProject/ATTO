@@ -10,11 +10,14 @@ const LISTING_DEPOSIT = "50000000000000000000000";
 const CLEAR_DEPOSIT = "10000000000000000000000";
 const KEEPER_LATER = "Keeper isn't deployed on mainnet yet.";
 
-export function mainnetClient(call: Call): AttoClient {
+type Sign = (receiverId: string, methodName: string, args: object, deposit?: string) => Promise<unknown>;
+
+/** `sign` defaults to the visitor's wallet; the testnet proof script swaps in a testnet key. */
+export function mainnetClient(call: Call, sign: Sign = walletCall): AttoClient {
   let config: Promise<{ escrow: string; registry: string }> | null = null;
   const contracts = () => (config ??= call("config"));
   const escrowCall = async (method: string, args: object, deposit?: string) =>
-    walletCall((await contracts()).escrow, method, args, deposit);
+    sign((await contracts()).escrow, method, args, deposit);
   const sale = async (id: string) => {
     const view = await call<SaleView | null>("getSale", { id });
     if (!view) throw new Error("No such sale.");
@@ -70,7 +73,7 @@ export function mainnetClient(call: Call): AttoClient {
     async handOver(id) {
       const { listing } = await sale(id);
       const { escrow, registry } = await contracts();
-      await walletCall(
+      await sign(
         registry,
         "nft_transfer_call",
         { receiver_id: escrow, token_id: listing.token_id, approval_id: null, memo: null, msg: id },
