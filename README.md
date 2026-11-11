@@ -18,6 +18,8 @@ The contracts run against the real registry, wallet and Intents code, deployed t
 - `tests/clean_sale_dirty_name.rs` sells a name that still has a seller-held Intents key, a token balance in Intents, an NFT approval and a sub-account. Before the sale, a withdrawal signed with the seller's key is valid. After the sale, the keys and approvals are gone, the balance is still in the name, and that same signed withdrawal is refused.
 - `tests/sale_mid_renewal.rs` runs a Clean Sale and a Keeper renewal at the same time. The lease is extended, the buyer owns the name, and the reserve is charged exactly the rent the registry took.
 
+The same escrow binary is deployed on NEAR mainnet at `escrow.jadonamite.near` and on NEAR testnet at `escrow.attotest.testnet`. On testnet a name with a leftover Intents key was sold through the website's own code: [listed](https://testnet.nearblocks.io/txns/6LKJBvtMMAYMCtrpq7kKHXCdcasuEeP8Cekjzgse6W75), [paid](https://testnet.nearblocks.io/txns/21L6rbdnLAUeWAp1jUUu1kZLuFDjnr47koeJupNA5UwA), [handed over](https://testnet.nearblocks.io/txns/9XGpRFmipNKbg526wVAkAeQ4kqrW4z3nThbtAHrWX8j), [cleared](https://testnet.nearblocks.io/txns/BuYB6TLduYpX2cvNyncHJ2rt3J8nGgFa1MDygXrgwsmD), [verified](https://testnet.nearblocks.io/txns/8B3EVEGPxPpK4PeSgwUcVSV2gKVPw3FRnGGBC39YHEND) and [completed](https://testnet.nearblocks.io/txns/9bFxAE9A43m2Sf7ur8ktYts3fyJSMvk9ZbLHdwHnXLmL).
+
 The [threat model](docs/THREAT-MODEL.md) lists 30 ways a sale can go wrong and how the escrow handles each one. [How control passes](docs/HOW-CONTROL-PASSES.md) walks through the handover step by step.
 
 ## Run it
@@ -47,6 +49,16 @@ NEXT_PUBLIC_ATTO_BACKEND=sandbox pnpm --filter web dev
 ```
 
 The site now reads and signs real transactions on the sandbox with throwaway keys. The seller persona is whichever sandbox account owns the name, and the buyer is the other one. Keeper controls stay on demo data in this mode.
+
+### On NEAR testnet or mainnet
+
+```sh
+NEXT_PUBLIC_ATTO_BACKEND=testnet pnpm --filter web dev
+```
+
+The site reads the deployed escrow and registry, and every transaction is approved in your own wallet: connect one from the bar at the top. No key is held by the site. After the seller hands the name over, the same wallet approves the remaining steps (post the final report, clear, verify, complete), one approval each. `mainnet` works the same way against `escrow.jadonamite.near` and `registry.hos`.
+
+Testnet runs ATTO's own copy of the registry and Intents under `attotest.testnet`, with the escrow at `escrow.attotest.testnet` and the Keeper at `keeper.attotest.testnet`. Testnet has no transaction index, so the NFT, DAO role, sub-account and history sections of a report read as unavailable there. Name history and the Keeper screens are not served in either wallet mode yet.
 
 ### Services
 
