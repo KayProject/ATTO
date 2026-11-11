@@ -1,5 +1,5 @@
 // AttoClient on NEAR mainnet: reads come from the server, every write is approved in the visitor's wallet.
-import { driveSale } from "@atto/bot";
+import { driveSale, type SaleDriver } from "@atto/bot";
 import type { Listing, Report } from "@atto/shared";
 import type { AttoClient, SaleView } from "../types";
 import { walletCall } from "./wallet";
@@ -9,6 +9,7 @@ type Call = <T>(method: string, args?: object) => Promise<T>;
 const LISTING_DEPOSIT = "50000000000000000000000";
 const CLEAR_DEPOSIT = "10000000000000000000000";
 const KEEPER_LATER = "Keeper isn't deployed on mainnet yet.";
+const SETTLED = new Set(["Completed", "Reversed", "Cancelled", "blocked"]);
 
 type Sign = (receiverId: string, methodName: string, args: object, deposit?: string) => Promise<unknown>;
 
@@ -16,8 +17,9 @@ type Sign = (receiverId: string, methodName: string, args: object, deposit?: str
 export function mainnetClient(call: Call, sign: Sign = walletCall): AttoClient {
   let config: Promise<{ escrow: string; registry: string }> | null = null;
   const contracts = () => (config ??= call("config"));
-  const escrowCall = async (method: string, args: object, deposit?: string) =>
-    sign((await contracts()).escrow, method, args, deposit);
+  const escrowCall = async (method: string, args: object, deposit?: string): Promise<void> => {
+    await sign((await contracts()).escrow, method, args, deposit);
+  };
   const sale = async (id: string) => {
     const view = await call<SaleView | null>("getSale", { id });
     if (!view) throw new Error("No such sale.");
@@ -29,18 +31,24 @@ export function mainnetClient(call: Call, sign: Sign = walletCall): AttoClient {
 
   /** Posts the final report, clears, verifies and completes, one wallet approval per step. */
   async function finish(id: string) {
-    const result = await driveSale(
-      {
-        getListing: async (lid) => (await call<SaleView | null>("getSale", { id: lid }))?.listing ?? null,
-        report: (name) => call<Report>("finalReport", { name }),
-        postManifest: (lid, report) => escrowCall("post_manifest", { listing_id: lid, manifest: report.manifest }),
-        clear: (lid, count) => escrowCall("clear", { listing_id: lid, count }, CLEAR_DEPOSIT),
-        verify: (lid) => escrowCall("verify", { listing_id: lid }),
-        complete: (lid) => escrowCall("complete", { listing_id: lid }),
-        reverse: (lid) => escrowCall("reverse", { listing_id: lid }),
-      },
-      id,
-    );
+    const driver: SaleDriver = {
+      getListing: async (lid: string) =>
+        (await call<SaleView | null>("getSale", { id: lid }))?.listing ?? null,
+      report: (name: string) => call<Report>("finalReport", { name }),
+      postManifest: (lid: string, report: Report) =>
+        escrowCall("post_manifest", { listing_id: lid, manifest: report.manifest }),
+      clear: (lid: string, count: number) => escrowCall("clear", { listing_id: lid, count }, CLEAR_DEPOSIT),
+      verify: (lid: string) => escrowCall("verify", { listing_id: lid }),
+      complete: (lid: string) => escrowCall("complete", { listing_id: lid }),
+      reverse: (lid: string) => escrowCall("reverse", { listing_id: lid }),
+    };
+    // A read taken right after a write can still see the previous state, which makes driveSale
+    // think there is nothing left to do. Re-drive until the sale reaches a terminal state.
+    let result = await driveSale(driver, id);
+    for (let i = 0; i < 5 && !!result.state && !SETTLED.has(result.state); i++) {
+      await new Promise((r) => setTimeout(r, 1500));
+      result = await driveSale(driver, id);
+    }
     if (result.state === "blocked") throw new Error(result.reason ?? "This name can't complete a Clean Sale.");
   }
 
@@ -57,19 +65,30 @@ export function mainnetClient(call: Call, sign: Sign = walletCall): AttoClient {
     async list(token_id, price) {
       if (BigInt(price) <= 0n) throw new Error("Set a price above zero.");
       await escrowCall("list", { token_id, price }, LISTING_DEPOSIT);
-      const listing = await call<Listing | null>("listingFor", { token_id });
+      let listing = await call<Listing | null>("listingFor", { token_id });
+      // The first read after the write can land on a node that hasn't seen it yet.
+      for (let i = 0; i < 5 && (!listing || listing.state !== "Listed"); i++) {
+        await new Promise((r) => setTimeout(r, 1200));
+        listing = await call<Listing | null>("listingFor", { token_id });
+      }
       if (!listing || listing.state !== "Listed") throw new Error("The escrow didn't record the listing.");
       return listing.id;
     },
-    delist: (id) => escrowCall("delist", { listing_id: id }),
+    async delist(id) {
+      await escrowCall("delist", { listing_id: id });
+    },
     async pay(id, fingerprint) {
       const view = await sale(id);
       if (view.report.fingerprint !== fingerprint)
         throw new Error("The report changed since you read it. Read the new report before paying.");
       await escrowCall("pay", { listing_id: id, fingerprint }, view.listing.price);
     },
-    cancel: (id) => escrowCall("cancel", { listing_id: id }),
-    reclaimPayment: (id) => escrowCall("reclaim_payment", { listing_id: id }),
+    async cancel(id) {
+      await escrowCall("cancel", { listing_id: id });
+    },
+    async reclaimPayment(id) {
+      await escrowCall("reclaim_payment", { listing_id: id });
+    },
     async handOver(id) {
       const { listing } = await sale(id);
       const { escrow, registry } = await contracts();
@@ -90,7 +109,9 @@ export function mainnetClient(call: Call, sign: Sign = walletCall): AttoClient {
       await escrowCall("post_manifest", { listing_id: id, manifest: report.manifest });
       await finish(id);
     },
-    reverse: (id) => escrowCall("reverse", { listing_id: id }),
+    async reverse(id) {
+      await escrowCall("reverse", { listing_id: id });
+    },
     finishSale: finish,
 
     getOwnerView: keeperLater,
