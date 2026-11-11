@@ -10,7 +10,9 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { BACKEND } from "@/lib/atto/backend";
 import { getPersona, getServerPersona, personaAccounts, setPersona, subscribePersona } from "@/lib/atto/client";
+import { restoreWallet, serverWalletAccount, subscribeWallet, walletAccount } from "@/lib/atto/mainnet/wallet";
 import { PERSONAS, type PersonaKey } from "@/lib/atto/mock/seeds";
 
 interface PersonaContext {
@@ -36,8 +38,14 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(() => setRevision((r) => r + 1), []);
   const [accounts, setAccounts] = useState<Record<PersonaKey, string>>(() => mockAccounts());
 
+  const wallet = useSyncExternalStore(subscribeWallet, walletAccount, serverWalletAccount);
+
+  useEffect(() => {
+    if (BACKEND === "mainnet") void restoreWallet();
+  }, []);
   // On the sandbox, who counts as seller follows the name, so this is re-read after every change.
   useEffect(() => {
+    if (BACKEND === "mainnet") return;
     let live = true;
     personaAccounts()
       .then((value) => live && setAccounts(value))
@@ -48,7 +56,16 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
   }, [revision]);
 
   return (
-    <Context.Provider value={{ persona, account: accounts[persona], accounts, setPersona, revision, refresh }}>
+    <Context.Provider
+      value={{
+        persona,
+        account: BACKEND === "mainnet" ? (wallet ?? "") : accounts[persona],
+        accounts,
+        setPersona,
+        revision,
+        refresh,
+      }}
+    >
       {children}
     </Context.Provider>
   );
@@ -60,9 +77,9 @@ export function usePersona() {
   return value;
 }
 
-/** Loads data on mount and whenever the persona or `deps` change. Optionally polls. */
+/** Loads data on mount and whenever the persona, the acting account or `deps` change. Optionally polls. */
 export function useLoad<T>(load: () => Promise<T>, deps: unknown[], pollMs?: number) {
-  const { persona, revision, refresh } = usePersona();
+  const { persona, account, revision, refresh } = usePersona();
   const [data, setData] = useState<T | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const latest = useRef(load);
@@ -91,7 +108,7 @@ export function useLoad<T>(load: () => Promise<T>, deps: unknown[], pollMs?: num
       live = false;
       if (timer) clearInterval(timer);
     };
-  }, [key, persona, revision, pollMs]);
+  }, [key, persona, account, revision, pollMs]);
 
   return { data, error, loading: data === undefined && error === null, refresh };
 }

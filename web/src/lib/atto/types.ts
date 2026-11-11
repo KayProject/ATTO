@@ -55,6 +55,8 @@ export interface SaleActions {
   hand_over: boolean;
   accept_changed: boolean;
   reverse: boolean;
+  /** Mainnet only: the remaining steps wait for someone in the sale to approve them. */
+  finish?: boolean;
 }
 
 export interface SaleView {
@@ -118,6 +120,8 @@ export interface AttoClient {
   handOver(id: string): Promise<HandOverResult>;
   acceptChangedReport(id: string): Promise<void>;
   reverse(id: string): Promise<void>;
+  /** Carries a held name through clearing, verification and payout. */
+  finishSale(id: string): Promise<void>;
 
   getOwnerView(name: string): Promise<OwnerView>;
   configureKeeper(name: string, enabled: boolean, share_bps: number): Promise<void>;

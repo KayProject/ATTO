@@ -215,6 +215,19 @@ export function SaleRoom({ params }: { params: Promise<{ id: string }> }) {
                 It owns the name now, so the seller is locked out. It cuts each leftover, then checks on the blockchain
                 that they&apos;re gone.
               </p>
+              {can.finish ? (
+                <>
+                  <p>Each remaining step needs an approval in your wallet.</p>
+                  <button
+                    type="button"
+                    className="button button-primary"
+                    disabled={busy}
+                    onClick={() => void run(() => atto.finishSale(id))}
+                  >
+                    Continue the sale
+                  </button>
+                </>
+              ) : null}
             </>
           ) : null}
 

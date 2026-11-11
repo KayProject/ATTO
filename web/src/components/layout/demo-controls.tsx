@@ -5,6 +5,7 @@ import { useState, useSyncExternalStore } from "react";
 import { mockTools } from "@/lib/atto/client";
 import { BACKEND, LIVE_REPORTS } from "@/lib/atto/backend";
 import { formatDateTime } from "@/lib/atto/format";
+import { connectWallet, disconnectWallet } from "@/lib/atto/mainnet/wallet";
 import { PERSONAS, type PersonaKey } from "@/lib/atto/mock/seeds";
 import { usePersona } from "../providers";
 
@@ -29,6 +30,8 @@ export function MockBar() {
     refresh();
     router.push("/");
   }
+
+  if (BACKEND === "mainnet") return <WalletBar account={hydrated ? account : ""} />;
 
   return (
     <aside className="mockbar" aria-label="Demo controls">
@@ -72,6 +75,49 @@ export function MockBar() {
             )}
           </div>
         </details>
+      </div>
+    </aside>
+  );
+}
+
+/** On mainnet the bar holds the visitor's wallet instead of the demo personas. */
+function WalletBar({ account }: { account: string }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function act(action: () => Promise<void>) {
+    setBusy(true);
+    setError(null);
+    try {
+      await action();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "The wallet didn't connect. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <aside className="mockbar" aria-label="Wallet">
+      <div className="frame mockbar-inner">
+        <span className="environment-label">
+          NEAR mainnet
+          {account ? <span className="acting-account"> · {account}</span> : null}
+        </span>
+        <div className="row">
+          {error ? (
+            <span className="small" role="alert">
+              {error}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void act(account ? disconnectWallet : connectWallet)}
+          >
+            {account ? "Disconnect" : "Connect wallet"}
+          </button>
+        </div>
       </div>
     </aside>
   );

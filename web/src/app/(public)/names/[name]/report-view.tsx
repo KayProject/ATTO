@@ -6,7 +6,7 @@ import { use } from "react";
 import { SceneArt } from "@/components/product/scene-art";
 import { useLoad } from "@/components/providers";
 import { Plat, platLinks, platUnread, ReportProvenance, ReportSections, Tally } from "@/components/report";
-import { LIVE_REPORTS } from "@/lib/atto/backend";
+import { BACKEND, LIVE_REPORTS } from "@/lib/atto/backend";
 import { atto } from "@/lib/atto/client";
 
 export function ReportView({ params }: { params: Promise<{ name: string }> }) {
@@ -31,19 +31,23 @@ export function ReportView({ params }: { params: Promise<{ name: string }> }) {
       <div className="frame stack">
         <h1>{name}</h1>
         <p>
-          {LIVE_REPORTS
+          {BACKEND === "mainnet"
+            ? "ATTO found no rented name with this spelling on NEAR mainnet."
+            : LIVE_REPORTS
             ? "ATTO found no rented name with this spelling on NEAR mainnet, or in the demo."
             : "There's no report for this name in the demo."}
         </p>
-        <p>
-          Try one of the demo names:{" "}
-          {samples.map((s, i) => (
-            <span key={s}>
-              {i > 0 ? ", " : ""}
-              <Link href={`/names/${s}`}>{s}</Link>
-            </span>
-          ))}
-        </p>
+        {samples.length > 0 ? (
+          <p>
+            Try one of the demo names:{" "}
+            {samples.map((s, i) => (
+              <span key={s}>
+                {i > 0 ? ", " : ""}
+                <Link href={`/names/${s}`}>{s}</Link>
+              </span>
+            ))}
+          </p>
+        ) : null}
       </div>
     );
   }

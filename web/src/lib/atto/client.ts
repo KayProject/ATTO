@@ -1,4 +1,7 @@
-// The browser's AttoClient. The server answers from the mock or the local sandbox.
+// The browser's AttoClient. The server answers from the mock, the local sandbox or NEAR mainnet.
+import { BACKEND } from "./backend";
+import { mainnetClient } from "./mainnet/client";
+import { walletAccount } from "./mainnet/wallet";
 import { PERSONAS, type PersonaKey } from "./mock/seeds";
 import type { AttoClient } from "./types";
 
@@ -43,14 +46,14 @@ async function call<T>(method: string, args: object = {}): Promise<T> {
   const response = await fetch(`/api/atto/${method}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ persona: getPersona(), args }),
+    body: JSON.stringify({ persona: getPersona(), account: walletAccount(), args }),
   });
   const body = (await response.json().catch(() => null)) as { result?: T; error?: string } | null;
   if (!response.ok) throw new Error(body?.error ?? `The request failed with status ${response.status}.`);
   return body?.result as T;
 }
 
-export const atto: AttoClient = {
+const served: AttoClient = {
   getReport: (name) => call("getReport", { name }),
   getHistory: (name) => call("getHistory", { name }),
   changedOwner: (name, days) => call("changedOwner", { name, days }),
@@ -67,12 +70,15 @@ export const atto: AttoClient = {
   handOver: (id) => call("handOver", { id }),
   acceptChangedReport: (id) => call("acceptChangedReport", { id }),
   reverse: (id) => call("reverse", { id }),
+  finishSale: (id) => call("finishSale", { id }),
   getOwnerView: (name) => call("getOwnerView", { name }),
   configureKeeper: (name, enabled, share_bps) => call("configureKeeper", { name, enabled, share_bps }),
   topUp: (name, amount) => call("topUp", { name, amount }),
   withdraw: (name, amount) => call("withdraw", { name, amount }),
   renew: (name) => call("renew", { name }),
 };
+
+export const atto: AttoClient = BACKEND === "mainnet" ? mainnetClient(call) : served;
 
 /** The account each persona acts as on the current backend. */
 export const personaAccounts = () => call<Record<PersonaKey, string>>("accounts");

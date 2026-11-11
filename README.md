@@ -81,7 +81,7 @@ GET /api/v1/names/{name}/history
 
 | Variable | What it sets |
 | --- | --- |
-| `NEXT_PUBLIC_ATTO_BACKEND` | `sandbox` runs the website on the local contracts. Anything else uses the demo data. |
+| `NEXT_PUBLIC_ATTO_BACKEND` | `sandbox` runs the website on the local contracts. `mainnet` reads the deployed escrow on NEAR mainnet and sends every transaction to the visitor's own wallet. Anything else uses the demo data. |
 | `NEXT_PUBLIC_ATTO_LIVE_REPORTS` | `1` gives names outside the demo data a live, read-only report from NEAR mainnet. Sales stay on demo data. Off by default, and ignored in sandbox mode. |
 | `ATTO_SANDBOX_RUNTIME` | Path to the sandbox `runtime.json`. Defaults to `workbench/sandbox/runtime.json`. |
 | `ATTO_DB_PATH` | SQLite file for history and saved reports. Defaults to `workbench/atto.sqlite`. |
