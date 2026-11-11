@@ -1,5 +1,5 @@
 // The browser's AttoClient. The server answers from the mock, the local sandbox or NEAR mainnet.
-import { BACKEND } from "./backend";
+import { WALLET } from "./backend";
 import { mainnetClient } from "./mainnet/client";
 import { walletAccount } from "./mainnet/wallet";
 import { PERSONAS, type PersonaKey } from "./mock/seeds";
@@ -78,7 +78,7 @@ const served: AttoClient = {
   renew: (name) => call("renew", { name }),
 };
 
-export const atto: AttoClient = BACKEND === "mainnet" ? mainnetClient(call) : served;
+export const atto: AttoClient = WALLET ? mainnetClient(call) : served;
 
 /** The account each persona acts as on the current backend. */
 export const personaAccounts = () => call<Record<PersonaKey, string>>("accounts");

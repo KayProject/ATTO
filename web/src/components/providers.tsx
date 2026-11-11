@@ -10,7 +10,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { BACKEND } from "@/lib/atto/backend";
+import { WALLET } from "@/lib/atto/backend";
 import { getPersona, getServerPersona, personaAccounts, setPersona, subscribePersona } from "@/lib/atto/client";
 import { restoreWallet, serverWalletAccount, subscribeWallet, walletAccount } from "@/lib/atto/mainnet/wallet";
 import { PERSONAS, type PersonaKey } from "@/lib/atto/mock/seeds";
@@ -41,11 +41,11 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
   const wallet = useSyncExternalStore(subscribeWallet, walletAccount, serverWalletAccount);
 
   useEffect(() => {
-    if (BACKEND === "mainnet") void restoreWallet();
+    if (WALLET) void restoreWallet();
   }, []);
   // On the sandbox, who counts as seller follows the name, so this is re-read after every change.
   useEffect(() => {
-    if (BACKEND === "mainnet") return;
+    if (WALLET) return;
     let live = true;
     personaAccounts()
       .then((value) => live && setAccounts(value))
@@ -59,7 +59,7 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
     <Context.Provider
       value={{
         persona,
-        account: BACKEND === "mainnet" ? (wallet ?? "") : accounts[persona],
+        account: WALLET ? (wallet ?? "") : accounts[persona],
         accounts,
         setPersona,
         revision,

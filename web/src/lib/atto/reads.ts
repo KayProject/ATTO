@@ -1,11 +1,11 @@
 // Public reads for the Check API, from whichever backend the site runs on.
-import { BACKEND } from "./backend";
+import { BACKEND, WALLET } from "./backend";
 import { mainnet } from "./mainnet/server";
 import { getWorld } from "./mock/singleton";
 import { sandbox } from "./sandbox";
 
 export const reads =
-  BACKEND === "mainnet"
+  WALLET
     ? mainnet
     : BACKEND === "sandbox"
       ? sandbox

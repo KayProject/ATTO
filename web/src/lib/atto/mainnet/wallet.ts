@@ -1,5 +1,6 @@
 // The visitor's own NEAR wallet. Browser only: nothing here runs on the server.
 import type { NearConnector } from "@hot-labs/near-connect";
+import { NETWORK } from "../backend";
 
 const GAS = "300000000000000";
 let connector: Promise<NearConnector> | null = null;
@@ -14,7 +15,7 @@ function setAccount(next: string | null) {
 
 function getConnector() {
   connector ??= import("@hot-labs/near-connect").then(({ NearConnector }) => {
-    const c = new NearConnector({ network: "mainnet", autoConnect: true });
+    const c = new NearConnector({ network: NETWORK ?? "mainnet", autoConnect: true });
     c.on("wallet:signIn", (event) => setAccount(event.accounts[0]?.accountId ?? null));
     c.on("wallet:signOut", () => setAccount(null));
     return c;

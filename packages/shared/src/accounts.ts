@@ -20,10 +20,20 @@ export const MAINNET: NetworkAccounts = {
   keeper: null,
 };
 
+/** ATTO's own fleet on NEAR testnet, deployed from the same contract sources. */
+export const TESTNET: NetworkAccounts = {
+  rpc: "https://test.rpc.fastnear.com",
+  registry: "registry.attotest.testnet",
+  hosExtension: "ext.attotest.testnet",
+  intents: "intents.attotest.testnet",
+  escrow: "escrow.attotest.testnet",
+  keeper: "keeper.attotest.testnet",
+};
+
 /** Reads sandbox (or overridden) accounts from ATTO_* variables. */
 export function accountsFromEnv(env: Record<string, string | undefined>): { network: NetworkId; accounts: NetworkAccounts } {
   const network = (env.ATTO_NETWORK ?? "mainnet") as NetworkId;
-  const base = network === "mainnet" ? MAINNET : null;
+  const base = network === "mainnet" ? MAINNET : network === "testnet" ? TESTNET : null;
   const pick = (key: string, fallback: string | null | undefined) => env[key] ?? fallback ?? null;
   const required = (key: string, fallback: string | null | undefined) => {
     const v = pick(key, fallback);

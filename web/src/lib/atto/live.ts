@@ -1,6 +1,7 @@
-// Read-only reports for real names, from Title Search on NEAR mainnet. Server only.
+// Read-only reports for real names, from Title Search on the wallet network. Server only.
 import { accountsFromEnv, type Report } from "@atto/shared";
 import { Rpc, titleSearch, validateName } from "@atto/title-search";
+import { NETWORK } from "./backend";
 import { Refusal } from "./mock/world";
 
 /** Title Search still builds a report for a name the registry doesn't hold, with its owner section unavailable. */
@@ -16,10 +17,12 @@ export async function liveReport(input: string, search: typeof titleSearch = tit
   } catch (error) {
     throw new Refusal(error instanceof Error ? error.message : "Enter a complete NEAR name.");
   }
-  // Fixed to mainnet, so a stray ATTO_NETWORK can't put the wrong network on the label.
-  const { accounts } = accountsFromEnv({ ...process.env, ATTO_NETWORK: "mainnet" });
+  // Follow the site's backend, so a stray ATTO_NETWORK can't put the wrong network on the label.
+  // The mock's live reports stay on mainnet.
+  const network = NETWORK ?? "mainnet";
+  const { accounts } = accountsFromEnv({ ...process.env, ATTO_NETWORK: network });
   try {
-    const report = await search(name, { rpc: new Rpc(accounts, "mainnet") });
+    const report = await search(name, { rpc: new Rpc(accounts, network) });
     return isRegistered(report) ? report : null;
   } catch {
     throw new Refusal("Title Search couldn't reach NEAR just now, so there's no report. Try again in a moment.");

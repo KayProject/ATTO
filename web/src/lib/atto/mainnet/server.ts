@@ -1,4 +1,4 @@
-// Reads served from the deployed escrow and the registry on NEAR mainnet. Server only.
+// Reads served from the deployed escrow and the registry on the wallet network. Server only.
 // Nothing here signs: every transaction is approved in the visitor's wallet.
 import { z } from "zod";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@atto/shared";
 import { Rpc, titleSearch } from "@atto/title-search";
 import { liveReport } from "../live";
+import { NETWORK } from "../backend";
 import { Refusal } from "../mock/world";
 import type { ChangedAnswer, HistoryEvent, OwnedName, SaleView } from "../types";
 
@@ -18,9 +19,10 @@ const MAX_OWNED = 20;
 const BATCH = 4;
 
 function context() {
-  const { accounts } = accountsFromEnv({ ...process.env, ATTO_NETWORK: "mainnet" });
-  if (!accounts.escrow) throw new Refusal("The escrow isn't deployed on mainnet.");
-  return { rpc: new Rpc(accounts, "mainnet"), escrow: accounts.escrow, registry: accounts.registry };
+  if (!NETWORK) throw new Refusal("No NEAR network is configured for wallet mode.");
+  const { accounts } = accountsFromEnv({ ...process.env, ATTO_NETWORK: NETWORK });
+  if (!accounts.escrow) throw new Refusal(`The escrow isn't deployed on ${NETWORK}.`);
+  return { rpc: new Rpc(accounts, NETWORK), escrow: accounts.escrow, registry: accounts.registry };
 }
 type Ctx = ReturnType<typeof context>;
 

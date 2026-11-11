@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BACKEND, LIVE_REPORTS } from "@/lib/atto/backend";
+import { BACKEND, LIVE_REPORTS, WALLET } from "@/lib/atto/backend";
 import { MAINNET_METHODS } from "@/lib/atto/mainnet/server";
 import { METHODS } from "@/lib/atto/mock/dispatch";
 import { PERSONAS, type PersonaKey } from "@/lib/atto/mock/seeds";
@@ -9,7 +9,7 @@ import { SANDBOX_METHODS, sandboxAccount } from "@/lib/atto/sandbox";
 
 const Body = z.object({
   persona: z.enum(Object.keys(PERSONAS) as [PersonaKey, ...PersonaKey[]]),
-  // The connected wallet on mainnet. It only shapes reads, so it isn't proof of anything.
+  // The connected wallet on a wallet network. It only shapes reads, so it isn't proof of anything.
   account: z
     .string()
     .regex(/^[a-z0-9._-]{2,64}$/)
@@ -30,7 +30,7 @@ async function accounts() {
 
 export async function POST(request: Request, { params }: { params: Promise<{ method: string }> }) {
   const { method } = await params;
-  const table = BACKEND === "mainnet" ? MAINNET_METHODS : BACKEND === "sandbox" ? SANDBOX_METHODS : METHODS;
+  const table = WALLET ? MAINNET_METHODS : BACKEND === "sandbox" ? SANDBOX_METHODS : METHODS;
   const handler = method === "accounts" ? () => accounts() : Object.hasOwn(table, method) ? table[method] : undefined;
   if (!handler) return Response.json({ error: "unknown method" }, { status: 404, headers: HEADERS });
   // Each live report makes many calls to NEAR's public services.
@@ -40,7 +40,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ met
   }
   try {
     const { persona, account, args } = Body.parse(await request.json());
-    const caller = BACKEND === "mainnet" ? (account ?? "") : await accountFor(persona);
+    const caller = WALLET ? (account ?? "") : await accountFor(persona);
     const result = (await handler(caller, args)) ?? null;
     const live = (result as { network?: string } | null)?.network === "mainnet";
     return Response.json({ result }, { headers: live ? { "x-atto-data": "mainnet" } : HEADERS });
