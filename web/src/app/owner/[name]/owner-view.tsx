@@ -4,12 +4,13 @@ import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SceneArt } from "@/components/product/scene-art";
 import { use, useState, type FormEvent } from "react";
-import { useAction, useLoad, usePersona } from "@/components/providers";
+import { useAction, useLoad } from "@/components/providers";
 import { ReportProvenance, Tally } from "@/components/report";
 import { KEEPER_NETWORK, NETWORK } from "@/lib/atto/backend";
 import { atto } from "@/lib/atto/client";
 import { formatDate, formatNear, parseNear } from "@/lib/atto/format";
 import { NOT_OWNER } from "@/lib/atto/types";
+import { OwnerGate } from "./owner-gate";
 
 function AmountForm({
   id,
@@ -61,24 +62,13 @@ function AmountForm({
 
 export function OwnerPageView({ params }: { params: Promise<{ name: string }> }) {
   const name = decodeURIComponent(use(params).name);
-  const { ownerAccount: account } = usePersona();
   const { data: view, error: loadError, loading } = useLoad(() => atto.getOwnerView(name), [name]);
   const { run, busy, error } = useAction();
   const [shareDraft, setShare] = useState<string | null>(null);
   const share = shareDraft ?? String((view?.reserve.share_bps ?? 0) / 100);
 
   if (loading) return <p className="frame soft">Checking who owns this name…</p>;
-  if (loadError === NOT_OWNER) {
-    return (
-      <div className="frame stack">
-        <h1>This page is for the owner of {name}</h1>
-        <p className="notice notice-bad">
-          {account} doesn&apos;t own this name, so this page stays closed. Anyone can still read its{" "}
-          <Link href={`/names/${name}`}>public report</Link>.
-        </p>
-      </div>
-    );
-  }
+  if (loadError === NOT_OWNER) return <OwnerGate name={name} />;
   if (loadError || !view) {
     return (
       <div className="frame stack">
@@ -92,10 +82,9 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
   }
 
   const { reserve } = view;
-  // On a wallet network the page is open to everyone, and only the owner's wallet can change anything.
-  const locked = view.can_manage === false;
+  if (view.can_manage === false) return <OwnerGate name={name} />;
   const elsewhere = KEEPER_NETWORK !== NETWORK;
-  const idle = busy || locked;
+  const idle = busy;
   const short = BigInt(view.shortfall) > 0n;
   const filled = Math.min(100, Number((BigInt(reserve.balance) * 100n) / BigInt(view.renewal_cost)));
   const shareBps = Math.round(Number(share) * 100);
@@ -116,14 +105,7 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
         <div>
           <div className="stack">
             <h1 className="deed-title">{view.name}</h1>
-            {locked ? (
-              <p>
-                Owned by {view.owner}. Anyone can read this page. Only the owner&apos;s {KEEPER_NETWORK} wallet can
-                change the reserve.
-              </p>
-            ) : (
-              <p>Only {view.owner}, the current owner, can change what&apos;s on this page.</p>
-            )}
+            <p>Only {view.owner}, the current owner, can change what&apos;s on this page.</p>
             <dl className="facts">
               <div>
                 <dt>Lease ends</dt>
