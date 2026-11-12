@@ -22,7 +22,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <SiteHeader />
           </Suspense>
           <main>{children}</main>
-          <SiteFooter />
+          <Suspense>
+            <SiteFooter />
+          </Suspense>
           <ConsentBanner />
         </PersonaProvider>
       </body>

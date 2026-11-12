@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { mockTools } from "@/lib/atto/client";
-import { BACKEND, LIVE_REPORTS, NETWORK, WALLET } from "@/lib/atto/backend";
+import { BACKEND, LIVE_REPORTS, NETWORK, WALLET, networkFor } from "@/lib/atto/backend";
 import { formatDateTime } from "@/lib/atto/format";
 import { connectWallet, disconnectWallet } from "@/lib/atto/mainnet/wallet";
 import { PERSONAS, type PersonaKey } from "@/lib/atto/mock/seeds";
@@ -31,7 +31,7 @@ export function MockBar() {
     router.push("/");
   }
 
-  if (WALLET) return <WalletBar account={hydrated ? account : ""} />;
+  if (WALLET) return <WalletBar hydrated={hydrated} />;
 
   return (
     <aside className="mockbar" aria-label="Demo controls">
@@ -81,7 +81,10 @@ export function MockBar() {
 }
 
 /** On a wallet network the bar holds the visitor's wallet instead of the demo personas. */
-function WalletBar({ account }: { account: string }) {
+function WalletBar({ hydrated }: { hydrated: boolean }) {
+  const persona = usePersona();
+  const network = networkFor(usePathname()) ?? "mainnet";
+  const account = !hydrated ? "" : network === NETWORK ? persona.account : persona.ownerAccount;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,7 +104,8 @@ function WalletBar({ account }: { account: string }) {
     <aside className="mockbar" aria-label="Wallet">
       <div className="frame mockbar-inner">
         <span className="environment-label">
-          NEAR {NETWORK ?? "mainnet"}
+          NEAR {network}
+          {network !== NETWORK ? " · Keeper runs here for now" : ""}
           {account ? <span className="acting-account"> · {account}</span> : null}
         </span>
         <div className="row">
@@ -113,9 +117,9 @@ function WalletBar({ account }: { account: string }) {
           <button
             type="button"
             disabled={busy}
-            onClick={() => void act(account ? disconnectWallet : connectWallet)}
+            onClick={() => void act(() => (account ? disconnectWallet(network) : connectWallet(network)))}
           >
-            {account ? "Disconnect" : "Connect wallet"}
+            {account ? "Disconnect" : network !== NETWORK ? `Connect ${network} wallet` : "Connect wallet"}
           </button>
         </div>
       </div>

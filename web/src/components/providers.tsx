@@ -10,7 +10,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { WALLET } from "@/lib/atto/backend";
+import { KEEPER_NETWORK, NETWORK, WALLET } from "@/lib/atto/backend";
 import { getPersona, getServerPersona, personaAccounts, setPersona, subscribePersona } from "@/lib/atto/client";
 import { restoreWallet, serverWalletAccount, subscribeWallet, walletAccount } from "@/lib/atto/mainnet/wallet";
 import { PERSONAS, type PersonaKey } from "@/lib/atto/mock/seeds";
@@ -18,6 +18,8 @@ import { PERSONAS, type PersonaKey } from "@/lib/atto/mock/seeds";
 interface PersonaContext {
   persona: PersonaKey;
   account: string;
+  /** The account that acts on the owner pages. Differs from `account` only when Keeper runs on another network. */
+  ownerAccount: string;
   /** The account behind every persona on the current backend. */
   accounts: Record<PersonaKey, string>;
   setPersona: (p: PersonaKey) => void;
@@ -38,10 +40,18 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(() => setRevision((r) => r + 1), []);
   const [accounts, setAccounts] = useState<Record<PersonaKey, string>>(() => mockAccounts());
 
-  const wallet = useSyncExternalStore(subscribeWallet, walletAccount, serverWalletAccount);
+  const wallet = useSyncExternalStore(subscribeWallet, () => (NETWORK ? walletAccount(NETWORK) : null), serverWalletAccount);
+  // The owner pages can run on a different network from the rest of the site, with their own wallet.
+  const keeperWallet = useSyncExternalStore(
+    subscribeWallet,
+    () => (KEEPER_NETWORK ? walletAccount(KEEPER_NETWORK) : null),
+    serverWalletAccount,
+  );
 
   useEffect(() => {
-    if (WALLET) void restoreWallet();
+    if (!NETWORK) return;
+    void restoreWallet(NETWORK);
+    if (KEEPER_NETWORK && KEEPER_NETWORK !== NETWORK) void restoreWallet(KEEPER_NETWORK);
   }, []);
   // On the sandbox, who counts as seller follows the name, so this is re-read after every change.
   useEffect(() => {
@@ -60,6 +70,7 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
       value={{
         persona,
         account: WALLET ? (wallet ?? "") : accounts[persona],
+        ownerAccount: WALLET ? (keeperWallet ?? "") : accounts[persona],
         accounts,
         setPersona,
         revision,
@@ -79,7 +90,7 @@ export function usePersona() {
 
 /** Loads data on mount and whenever the persona, the acting account or `deps` change. Optionally polls. */
 export function useLoad<T>(load: () => Promise<T>, deps: unknown[], pollMs?: number) {
-  const { persona, account, revision, refresh } = usePersona();
+  const { persona, account, ownerAccount, revision, refresh } = usePersona();
   const [data, setData] = useState<T | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const latest = useRef(load);
@@ -108,7 +119,7 @@ export function useLoad<T>(load: () => Promise<T>, deps: unknown[], pollMs?: num
       live = false;
       if (timer) clearInterval(timer);
     };
-  }, [key, persona, account, revision, pollMs]);
+  }, [key, persona, account, ownerAccount, revision, pollMs]);
 
   return { data, error, loading: data === undefined && error === null, refresh };
 }

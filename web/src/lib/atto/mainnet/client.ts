@@ -12,8 +12,15 @@ const NAME_CALL_GAS = "80000000000000";
 
 type Sign = (receiverId: string, calls: WalletCall[]) => Promise<unknown>;
 
-/** `sign` defaults to the visitor's wallet; proof scripts swap in a testnet key. */
-export function mainnetClient(call: Call, sign: Sign = walletSend): AttoClient {
+/**
+ * `sign` defaults to the visitor's wallet; proof scripts swap in a testnet key.
+ * `owner` carries the owner pages, which can run on a different network from the sales.
+ */
+export function mainnetClient(
+  call: Call,
+  sign: Sign = walletSend,
+  owner: { call: Call; sign: Sign } = { call, sign },
+): AttoClient {
   let config: Promise<{ escrow: string; registry: string }> | null = null;
   const contracts = () => (config ??= call("config"));
   const escrowCall = async (method: string, args: object, deposit?: string): Promise<void> => {
@@ -42,8 +49,8 @@ export function mainnetClient(call: Call, sign: Sign = walletSend): AttoClient {
     return (await sale(id)).listing;
   }
 
-  const keeper = (name: string) => call<KeeperState>("keeperState", { name });
-  const ownerView = (name: string) => call<OwnerView>("getOwnerView", { name });
+  const keeper = (name: string) => owner.call<KeeperState>("keeperState", { name });
+  const ownerView = (name: string) => owner.call<OwnerView>("getOwnerView", { name });
   // The report is rebuilt on every read, so it is left out when checking whether a write has landed.
   const ownerFacts = async (name: string) => JSON.stringify({ ...(await ownerView(name)), report: null });
   /** Runs one Keeper write, then waits until the owner page's reads show it. */
@@ -145,7 +152,7 @@ export function mainnetClient(call: Call, sign: Sign = walletSend): AttoClient {
       const state = await keeper(name);
       if (state.reserve) return;
       await ownerAct(name, () =>
-        sign(state.keeper, [{ methodName: "prepare", args: { name }, deposit: state.setup_cost }]),
+        owner.sign(state.keeper, [{ methodName: "prepare", args: { name }, deposit: state.setup_cost }]),
       );
     },
     async configureKeeper(name, enabled, share_bps) {
@@ -172,20 +179,21 @@ export function mainnetClient(call: Call, sign: Sign = walletSend): AttoClient {
           }),
         );
       calls.push(asName(state.keeper, "configure", { enabled, share_bps, puller: state.owner }, "20000000000000"));
-      await ownerAct(name, () => sign(name, calls));
+      await ownerAct(name, () => owner.sign(name, calls));
     },
     async topUp(name, amount) {
       const state = await keeper(name);
       if (!state.reserve) throw new Error("Set Keeper up for this name first.");
-      await ownerAct(name, () => sign(state.keeper, [{ methodName: "top_up", args: { name }, deposit: amount }]));
+      await ownerAct(name, () => owner.sign(state.keeper, [{ methodName: "top_up", args: { name }, deposit: amount }]));
     },
     async withdraw(name, amount) {
       const state = await keeper(name);
-      await ownerAct(name, () => sign(name, [asName(state.keeper, "withdraw", { amount }, "50000000000000")]));
+      await ownerAct(name, () => owner.sign(name, [asName(state.keeper, "withdraw", { amount }, "50000000000000")]));
     },
     async renew(name) {
       const state = await keeper(name);
-      await ownerAct(name, () => sign(state.keeper, [{ methodName: "renew", args: { name } }]));
+      await ownerAct(name, () => owner.sign(state.keeper, [{ methodName: "renew", args: { name } }]));
     },
+    keeperNames: () => owner.call("keeperNames"),
   };
 }

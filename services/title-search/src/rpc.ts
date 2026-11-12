@@ -16,12 +16,18 @@ export class Rpc {
     return new Rpc(accounts, network);
   }
   async call<T = unknown>(method: string, params: object): Promise<T> {
-    const response = await fetch(this.accounts.rpc, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: "atto", method, params }),
-      signal: AbortSignal.timeout(15_000),
-    });
+    // Public RPC endpoints throttle bursts, so a throttled call waits and tries again.
+    let response: Response;
+    for (let attempt = 0; ; attempt++) {
+      response = await fetch(this.accounts.rpc, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: "atto", method, params }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (response.status !== 429 || attempt === 3) break;
+      await new Promise((r) => setTimeout(r, 400 * 2 ** attempt));
+    }
     if (!response.ok) throw new Error(`RPC HTTP ${response.status}`);
     const body = await response.json();
     if (body.error) throw new Error(body.error.cause?.name ?? body.error.message ?? "RPC read refused");

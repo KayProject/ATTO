@@ -1,7 +1,7 @@
 // The browser's AttoClient. The server answers from the mock, the local sandbox or NEAR mainnet.
-import { WALLET } from "./backend";
+import { KEEPER_NETWORK, NETWORK, WALLET, type Network } from "./backend";
 import { mainnetClient } from "./mainnet/client";
-import { walletAccount } from "./mainnet/wallet";
+import { walletAccount, walletSend } from "./mainnet/wallet";
 import { PERSONAS, type PersonaKey } from "./mock/seeds";
 import type { AttoClient } from "./types";
 
@@ -42,16 +42,20 @@ export function subscribePersona(notify: () => void) {
   };
 }
 
-async function call<T>(method: string, args: object = {}): Promise<T> {
-  const response = await fetch(`/api/atto/${method}`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ persona: getPersona(), account: walletAccount(), args }),
-  });
-  const body = (await response.json().catch(() => null)) as { result?: T; error?: string } | null;
-  if (!response.ok) throw new Error(body?.error ?? `The request failed with status ${response.status}.`);
-  return body?.result as T;
-}
+/** Posts one method to the server, as the wallet account on `network`. */
+const caller =
+  (network: Network | null) =>
+  async <T,>(method: string, args: object = {}): Promise<T> => {
+    const response = await fetch(`/api/atto/${method}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ persona: getPersona(), account: network ? walletAccount(network) : null, args }),
+    });
+    const body = (await response.json().catch(() => null)) as { result?: T; error?: string } | null;
+    if (!response.ok) throw new Error(body?.error ?? `The request failed with status ${response.status}.`);
+    return body?.result as T;
+  };
+const call = caller(NETWORK);
 
 const served: AttoClient = {
   getReport: (name) => call("getReport", { name }),
@@ -78,7 +82,12 @@ const served: AttoClient = {
   renew: (name) => call("renew", { name }),
 };
 
-export const atto: AttoClient = WALLET ? mainnetClient(call) : served;
+export const atto: AttoClient = WALLET
+  ? mainnetClient(call, walletSend, {
+      call: caller(KEEPER_NETWORK),
+      sign: (receiverId, calls) => walletSend(receiverId, calls, KEEPER_NETWORK!),
+    })
+  : served;
 
 /** The account each persona acts as on the current backend. */
 export const personaAccounts = () => call<Record<PersonaKey, string>>("accounts");

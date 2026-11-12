@@ -1,49 +1,54 @@
-// The visitor's own NEAR wallet. Browser only: nothing here runs on the server.
+// The visitor's own NEAR wallet, one connection per network. Browser only: nothing here runs on the server.
 import type { NearConnector } from "@hot-labs/near-connect";
-import { NETWORK } from "../backend";
+import { NETWORK, type Network } from "../backend";
 
 const GAS = "300000000000000";
-let connector: Promise<NearConnector> | null = null;
-let account: string | null = null;
+const DEFAULT: Network = NETWORK ?? "mainnet";
+const connectors = new Map<Network, Promise<NearConnector>>();
+const accounts = new Map<Network, string | null>();
 const listeners = new Set<() => void>();
 
-function setAccount(next: string | null) {
-  if (next === account) return;
-  account = next;
+function setAccount(network: Network, next: string | null) {
+  if (next === (accounts.get(network) ?? null)) return;
+  accounts.set(network, next);
   listeners.forEach((notify) => notify());
 }
 
-function getConnector() {
-  connector ??= import("@hot-labs/near-connect").then(({ NearConnector }) => {
-    const c = new NearConnector({ network: NETWORK ?? "mainnet", autoConnect: true });
-    c.on("wallet:signIn", (event) => setAccount(event.accounts[0]?.accountId ?? null));
-    c.on("wallet:signOut", () => setAccount(null));
-    return c;
-  });
+function getConnector(network: Network) {
+  let connector = connectors.get(network);
+  if (!connector) {
+    connector = import("@hot-labs/near-connect").then(({ NearConnector }) => {
+      const c = new NearConnector({ network, autoConnect: true });
+      c.on("wallet:signIn", (event) => setAccount(network, event.accounts[0]?.accountId ?? null));
+      c.on("wallet:signOut", () => setAccount(network, null));
+      return c;
+    });
+    connectors.set(network, connector);
+  }
   return connector;
 }
 
 /** Picks up a wallet session left from an earlier visit. */
-export async function restoreWallet() {
+export async function restoreWallet(network: Network = DEFAULT) {
   try {
-    const { accounts } = await (await getConnector()).getConnectedWallet();
-    setAccount(accounts[0]?.accountId ?? null);
+    const { accounts: found } = await (await getConnector(network)).getConnectedWallet();
+    setAccount(network, found[0]?.accountId ?? null);
   } catch {
-    setAccount(null);
+    setAccount(network, null);
   }
 }
 
-export async function connectWallet() {
-  const wallet = await (await getConnector()).connect();
-  setAccount((await wallet.getAccounts())[0]?.accountId ?? null);
+export async function connectWallet(network: Network = DEFAULT) {
+  const wallet = await (await getConnector(network)).connect();
+  setAccount(network, (await wallet.getAccounts())[0]?.accountId ?? null);
 }
 
-export async function disconnectWallet() {
-  await (await getConnector()).disconnect();
-  setAccount(null);
+export async function disconnectWallet(network: Network = DEFAULT) {
+  await (await getConnector(network)).disconnect();
+  setAccount(network, null);
 }
 
-export const walletAccount = () => account;
+export const walletAccount = (network: Network = DEFAULT) => accounts.get(network) ?? null;
 export const serverWalletAccount = () => null;
 
 export function subscribeWallet(notify: () => void) {
@@ -67,12 +72,13 @@ export interface WalletCall {
 }
 
 /** Asks the connected wallet to approve one transaction of one or more calls. The visitor pays its gas and deposits. */
-export async function walletSend(receiverId: string, calls: WalletCall[]) {
-  if (!account) throw new Error("Connect your wallet first.");
+export async function walletSend(receiverId: string, calls: WalletCall[], network: Network = DEFAULT) {
+  const signerId = walletAccount(network);
+  if (!signerId) throw new Error(`Connect your ${network} wallet first.`);
   try {
-    const { wallet } = await (await getConnector()).getConnectedWallet();
+    const { wallet } = await (await getConnector(network)).getConnectedWallet();
     await wallet.signAndSendTransaction({
-      signerId: account,
+      signerId,
       receiverId,
       actions: calls.map(({ methodName, args, deposit = "0", gas = GAS }) => ({
         type: "FunctionCall" as const,

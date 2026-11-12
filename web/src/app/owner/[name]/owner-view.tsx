@@ -6,6 +6,7 @@ import { SceneArt } from "@/components/product/scene-art";
 import { use, useState, type FormEvent } from "react";
 import { useAction, useLoad, usePersona } from "@/components/providers";
 import { ReportProvenance, Tally } from "@/components/report";
+import { KEEPER_NETWORK, NETWORK } from "@/lib/atto/backend";
 import { atto } from "@/lib/atto/client";
 import { formatDate, formatNear, parseNear } from "@/lib/atto/format";
 import { NOT_OWNER } from "@/lib/atto/types";
@@ -60,7 +61,7 @@ function AmountForm({
 
 export function OwnerPageView({ params }: { params: Promise<{ name: string }> }) {
   const name = decodeURIComponent(use(params).name);
-  const { account } = usePersona();
+  const { ownerAccount: account } = usePersona();
   const { data: view, error: loadError, loading } = useLoad(() => atto.getOwnerView(name), [name]);
   const { run, busy, error } = useAction();
   const [shareDraft, setShare] = useState<string | null>(null);
@@ -91,6 +92,10 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
   }
 
   const { reserve } = view;
+  // On a wallet network the page is open to everyone, and only the owner's wallet can change anything.
+  const locked = view.can_manage === false;
+  const elsewhere = KEEPER_NETWORK !== NETWORK;
+  const idle = busy || locked;
   const short = BigInt(view.shortfall) > 0n;
   const filled = Math.min(100, Number((BigInt(reserve.balance) * 100n) / BigInt(view.renewal_cost)));
   const shareBps = Math.round(Number(share) * 100);
@@ -100,14 +105,25 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
     <div className="frame stack-lg">
       <nav className="breadcrumb" aria-label="Breadcrumb">
         <Link href="/owner">My names</Link>
-        <span>/</span>
-        <Link href={`/names/${name}`}>Public report</Link>
+        {elsewhere ? null : (
+          <>
+            <span>/</span>
+            <Link href={`/names/${name}`}>Public report</Link>
+          </>
+        )}
       </nav>
       <div className="owner-scene">
         <div>
           <div className="stack">
             <h1 className="deed-title">{view.name}</h1>
-            <p>Only {view.owner}, the current owner, can open this page.</p>
+            {locked ? (
+              <p>
+                Owned by {view.owner}. Anyone can read this page. Only the owner&apos;s {KEEPER_NETWORK} wallet can
+                change the reserve.
+              </p>
+            ) : (
+              <p>Only {view.owner}, the current owner, can change what&apos;s on this page.</p>
+            )}
             <dl className="facts">
               <div>
                 <dt>Lease ends</dt>
@@ -159,7 +175,7 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
           <button
             type="button"
             className="button button-primary"
-            disabled={busy}
+            disabled={idle}
             onClick={() => void run(() => atto.renew(name))}
           >
             Renew now from the reserve
@@ -182,7 +198,7 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
           <button
             type="button"
             className="button button-primary"
-            disabled={busy}
+            disabled={idle}
             onClick={() => void run(() => atto.setUpKeeper!(name))}
           >
             Set up Keeper
@@ -201,7 +217,7 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
             priority={view.can_renew ? "secondary" : "primary"}
             label="Top up, in NEAR"
             action="Top up the reserve"
-            busy={busy}
+            busy={idle}
             onSubmit={(a) => run(() => atto.topUp(name, a))}
           />
         </TabsContent>
@@ -210,7 +226,7 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
             id="withdraw"
             label="Withdraw, in NEAR"
             action="Withdraw to the name"
-            busy={busy}
+            busy={idle}
             onSubmit={(a) => run(() => atto.withdraw(name, a))}
           />
         </TabsContent>
@@ -237,7 +253,7 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
             <button
               type="button"
               className="button"
-              disabled={busy || !shareValid}
+              disabled={idle || !shareValid}
               onClick={() => void run(() => atto.configureKeeper(name, reserve.enabled, shareBps))}
             >
               Save share
@@ -245,7 +261,7 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
             <button
               type="button"
               className="button"
-              disabled={busy || !shareValid}
+              disabled={idle || !shareValid}
               onClick={() => void run(() => atto.configureKeeper(name, !reserve.enabled, shareBps))}
             >
               {reserve.enabled ? "Switch Keeper off" : "Switch Keeper on"}
@@ -259,14 +275,16 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
         <h2>Latest Title Search</h2>
         <Tally report={view.report} />
         <ReportProvenance report={view.report} />
-        <div className="row">
-          <Link className="button" href={`/names/${name}`}>
-            Read the report
-          </Link>
-          <Link className="button" href={`/names/${name}/history`}>
-            See history
-          </Link>
-        </div>
+        {elsewhere ? null : (
+          <div className="row">
+            <Link className="button" href={`/names/${name}`}>
+              Read the report
+            </Link>
+            <Link className="button" href={`/names/${name}/history`}>
+              See history
+            </Link>
+          </div>
+        )}
       </section>
     </div>
   );

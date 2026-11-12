@@ -96,6 +96,8 @@ export interface OwnerView {
   report: Report;
   /** Wallet networks only: the one-off deposit that sets Keeper up for this name. Absent once it is set up. */
   setup_cost?: string;
+  /** Wallet networks only: false when the page is open to a visitor who isn't the owner. */
+  can_manage?: boolean;
 }
 
 /** Wallet networks only: what the browser needs to build Keeper transactions for a name. */
@@ -149,4 +151,6 @@ export interface AttoClient {
   renew(name: string): Promise<void>;
   /** Wallet networks only: pays the one-off deposit that creates the name's reserve. */
   setUpKeeper?(name: string): Promise<void>;
+  /** Wallet networks only: the connected account's names on the network Keeper runs on. */
+  keeperNames?(): Promise<OwnedName[]>;
 }

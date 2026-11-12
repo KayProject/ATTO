@@ -150,6 +150,20 @@ main {
   min-height: 44px;
   align-items: center;
 }
+.site-footer[data-compact="true"] { padding-block: 0.75rem; }
+.site-footer[data-compact="true"] .site-footer-inner { align-items: center; }
+.site-footer-logo { color: var(--ground-ink); }
+.site-footer-logo svg { display: block; width: auto; height: 22px; }
+.site-footer nav { gap: 0.25rem; }
+.site-footer-icon {
+  justify-content: center;
+  width: 44px;
+  border-radius: 999px;
+  color: var(--muted);
+  transition: color 160ms ease, background-color 160ms ease;
+}
+.site-footer-icon:hover,
+.site-footer-icon:focus-visible { color: var(--ground-ink); background: color-mix(in srgb, var(--ground-ink) 8%, transparent); }
 .hero {
   display: grid;
   align-items: center;
