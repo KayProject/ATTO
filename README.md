@@ -11,6 +11,10 @@ ATTO finds those leftovers and removes them before anyone gets paid:
 - Keeper renews a name from a reserve that belongs to the name, so a forgotten renewal doesn't lose it.
 - Check API answers one question for any app about to pay a name: has it changed owner in the last N days?
 
+## Demo
+
+The demo film is on [YouTube](https://youtu.be/KB9lULeCTR8) and in the [demo post on X](https://x.com/morganalekay/status/2121217420908253655).
+
 ## Try it
 
 ### On the live site
