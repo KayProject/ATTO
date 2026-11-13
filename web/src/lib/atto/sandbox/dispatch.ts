@@ -38,6 +38,8 @@ export const SANDBOX_METHODS: Record<string, Handler> = {
   handOver: method(byId, (c, a) => sandbox.handOver(c, a.id)),
   acceptChangedReport: method(byId, (c, a) => sandbox.acceptChangedReport(c, a.id)),
   reverse: method(byId, (_, a) => sandbox.reverse(a.id)),
+  tryOldKey: method(byId, (_, a) => sandbox.tryOldKey(a.id)),
+  sandboxIds: method(z.object({}), () => sandbox.ids()),
   getOwnerView: keeperLater,
   configureKeeper: keeperLater,
   topUp: keeperLater,

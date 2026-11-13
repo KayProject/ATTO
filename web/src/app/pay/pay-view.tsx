@@ -1,40 +1,51 @@
 "use client";
 
-import Link from "next/link";
 import { Screen } from "@/components/product/screen";
 import { useState, type FormEvent } from "react";
 import { KIND_LABEL } from "@/lib/atto/check";
 import { atto } from "@/lib/atto/client";
 import { formatDate } from "@/lib/atto/format";
 import type { ChangedAnswer } from "@/lib/atto/types";
+import { useAlert } from "@/components/ui/alert-modal";
 
 const WINDOW_DAYS = 7;
 
-type Outcome = { name: string; answer: ChangedAnswer | null };
+/** The modal for one check: changed recently, steady, or no history. */
+function result(name: string, answer: ChangedAnswer | null) {
+  if (answer === null)
+    return { tone: "info" as const, title: "No history yet", body: `ATTO has no history for ${name}, so it can't say whether it changed owner.` };
+  if (answer.changed)
+    return {
+      tone: "warn" as const,
+      title: `${name} changed owner recently`,
+      body: `${KIND_LABEL[answer.kind!]} on ${formatDate(answer.at!)}${answer.previous_owner ? `, previously ${answer.previous_owner}` : ""}. Make sure you still mean to pay this name.`,
+      actions: [
+        { label: "See its history", href: `/names/${name}/history` },
+        { label: "Got it", primary: true },
+      ],
+    };
+  return { tone: "done" as const, title: "Same owner", body: `${name} hasn't changed owner in the last ${WINDOW_DAYS} days.` };
+}
 
 export function PayView() {
   const [name, setName] = useState("");
-  const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { alert } = useAlert();
 
   async function check(event: FormEvent) {
     event.preventDefault();
     const clean = name.trim().toLowerCase();
     if (!clean) return;
     setBusy(true);
-    setError(null);
-    setOutcome(null);
     try {
-      setOutcome({ name: clean, answer: await atto.changedOwner(clean, WINDOW_DAYS) });
+      const answer = await atto.changedOwner(clean, WINDOW_DAYS);
+      void alert(result(clean, answer));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "The check failed.");
+      void alert({ tone: "bad", title: "The check failed", body: e instanceof Error ? e.message : "The check failed." });
     } finally {
       setBusy(false);
     }
   }
-
-  const answer = outcome?.answer;
 
   return (
     <Screen>
@@ -60,32 +71,6 @@ export function PayView() {
         </button>
       </form>
 
-      <div aria-live="polite" className="stack">
-        {error ? <p className="notice notice-bad">{error}</p> : null}
-        {outcome && answer === null ? (
-          <p className="notice">
-            ATTO has no history for {outcome.name}, so it can&apos;t say whether it changed owner.
-          </p>
-        ) : null}
-        {outcome && answer?.changed ? (
-          <div className="notice notice-bad stack">
-            <h2>{outcome.name} changed owner recently</h2>
-            <p>
-              {KIND_LABEL[answer.kind!]} on {formatDate(answer.at!)}
-              {answer.previous_owner ? `, previously ${answer.previous_owner}` : ""}. Make sure you still mean to pay
-              this name.
-            </p>
-            <p>
-              <Link href={`/names/${outcome.name}/history`}>See its history</Link>
-            </p>
-          </div>
-        ) : null}
-        {outcome && answer && !answer.changed ? (
-          <p className="notice notice-done">
-            {outcome.name} hasn&apos;t changed owner in the last {WINDOW_DAYS} days.
-          </p>
-        ) : null}
-      </div>
     </Screen>
   );
 }

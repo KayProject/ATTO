@@ -5,6 +5,9 @@ import type { Listing, Rating, Report, Reserve } from "@atto/shared";
 /** The refusal when an account that doesn't own a name asks for its owner page or Keeper controls. */
 export const NOT_OWNER = "Only the current owner can do this.";
 
+/** Thrown when the wallet approval is rejected; pages show no alert for it. */
+export const DECLINED = "You rejected the transaction in your wallet.";
+
 export type HistoryKind =
   | "minted"
   | "transferred"

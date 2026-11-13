@@ -8,6 +8,8 @@ import { useLoad } from "@/components/providers";
 import { Plat, platLinks, platUnread, ReportProvenance, ReportSections, Tally } from "@/components/report";
 import { LIVE_REPORTS, NETWORK } from "@/lib/atto/backend";
 import { atto } from "@/lib/atto/client";
+import { useAlertOnce } from "@/components/ui/alert-modal";
+import type { Report } from "@atto/shared";
 
 export function ReportView({ params }: { params: Promise<{ name: string }> }) {
   const name = decodeURIComponent(use(params).name);
@@ -21,6 +23,18 @@ export function ReportView({ params }: { params: Promise<{ name: string }> }) {
     return { report, owned, open, samples };
   }, [name]);
 
+  const notes = data?.report ? reportNotes(data.report) : [];
+  useAlertOnce(notes.length ? `report:${name}:${data!.report!.fingerprint}` : null, () => ({
+    tone: notes.some((n) => n.bad) ? "warn" : "info",
+    title: "Before you rely on this report",
+    body: (
+      <ul className="alert-list">
+        {notes.map((n) => (
+          <li key={n.text}>{n.text}</li>
+        ))}
+      </ul>
+    ),
+  }));
   if (loading) return <AsyncState message="Inspecting the name…" />;
   if (error || !data)
     return <AsyncState error={error} message="No report was returned. Try inspecting the name again." />;
@@ -65,29 +79,7 @@ export function ReportView({ params }: { params: Promise<{ name: string }> }) {
         <div className="stack">
           <h1 className="deed-title">{report.name}</h1>
           <Tally report={report} />
-          {report.counts.NeedsSeller > 0 ? (
-            <p className="notice notice-bad">
-              Seller action needed. Review the open report sections before agreeing to a sale.
-            </p>
-          ) : null}
-          {Object.values(report.sections).some((section) => section.status === "unavailable") ? (
-            <p className="notice notice-bad">Some data is unavailable. This report is incomplete.</p>
-          ) : null}
           <ReportProvenance report={report} />
-          {live ? (
-            <p className="notice">
-              This is a live report of a real name on NEAR mainnet. It&apos;s read-only: ATTO&apos;s escrow isn&apos;t
-              on mainnet yet, so this name can&apos;t be sold through ATTO.
-            </p>
-          ) : null}
-          {!live && !report.clean_sale.supported ? (
-            <p className="notice notice-bad">
-              Clean Sale isn&apos;t available for this name. {report.clean_sale.reason}
-            </p>
-          ) : null}
-          {live && report.clean_sale.reason ? (
-            <p className="notice notice-bad">{report.clean_sale.reason} Reload in a minute to read them again.</p>
-          ) : null}
           <div className="row">
             {!sale && !(mine && !mine.listing_id && report.clean_sale.supported) ? (
               <a className="button button-primary" href="#report-details">
@@ -128,4 +120,23 @@ export function ReportView({ params }: { params: Promise<{ name: string }> }) {
       </section>
     </div>
   );
+}
+
+/** What a reader should know before relying on a report, shown once in a modal. */
+function reportNotes(report: Report) {
+  const live = report.network === "mainnet";
+  const notes: { text: string; bad: boolean }[] = [];
+  if (report.counts.NeedsSeller > 0)
+    notes.push({ text: "Seller action needed. Review the open report sections before agreeing to a sale.", bad: true });
+  if (Object.values(report.sections).some((section) => section.status === "unavailable"))
+    notes.push({ text: "Some data is unavailable, so this report is incomplete.", bad: true });
+  if (live)
+    notes.push({
+      text: "This is a live report of a real name on NEAR mainnet. It's read-only: ATTO's escrow isn't on mainnet yet, so this name can't be sold through ATTO.",
+      bad: false,
+    });
+  if (!live && !report.clean_sale.supported)
+    notes.push({ text: `Clean Sale isn't available for this name. ${report.clean_sale.reason ?? ""}`, bad: true });
+  if (live && report.clean_sale.reason) notes.push({ text: `${report.clean_sale.reason} Reload in a minute to read them again.`, bad: true });
+  return notes;
 }

@@ -6,6 +6,7 @@ import { use, useState, type FormEvent } from "react";
 import { useAction, useLoad, usePersona } from "@/components/providers";
 import { Plat, platLinks, platUnread, ReportSections, Tally } from "@/components/report";
 import { atto } from "@/lib/atto/client";
+import { useAlertOnce } from "@/components/ui/alert-modal";
 import { parseNear } from "@/lib/atto/format";
 
 export function NewSaleView({ params }: { params: Promise<{ name: string }> }) {
@@ -21,7 +22,18 @@ export function NewSaleView({ params }: { params: Promise<{ name: string }> }) {
     return { report, mine: owned.some((item) => item.name === name) };
   }, [name]);
   const report = data?.report;
-  const { run, busy, error } = useAction();
+  const { run, busy } = useAction();
+  useAlertOnce(loadError ? `load:${loadError}` : null, () => ({ tone: "bad", title: "This report didn't load", body: loadError }));
+  useAlertOnce(report && !report.clean_sale.supported ? `unsupported:${name}` : null, () => ({
+    tone: "warn",
+    title: "This name can't be listed yet",
+    body: report!.clean_sale.reason,
+  }));
+  useAlertOnce(data && report && !data.mine ? `notmine:${name}:${account}` : null, () => ({
+    tone: "info",
+    title: "Not your name",
+    body: `${account} doesn't own ${name}, so it can't list it.`,
+  }));
   const [price, setPrice] = useState("");
   const [priceError, setPriceError] = useState<string | null>(null);
 
@@ -38,7 +50,7 @@ export function NewSaleView({ params }: { params: Promise<{ name: string }> }) {
   }
 
   if (loading) return <p className="frame soft">Loading the report…</p>;
-  if (loadError) return <p className="frame notice notice-bad">{loadError}</p>;
+  if (loadError) return <p className="frame soft">This report couldn&apos;t load.</p>;
   if (!report) return <p className="frame">{name} isn&apos;t in the mock data.</p>;
 
   return (
@@ -70,9 +82,6 @@ export function NewSaleView({ params }: { params: Promise<{ name: string }> }) {
             ) : null}
           </div>
           <p className="small soft">Listing takes a 0.05 NEAR deposit, returned when the listing ends.</p>
-          {!report.clean_sale.supported ? <p className="notice notice-bad">{report.clean_sale.reason}</p> : null}
-          {!data?.mine ? <p className="notice notice-bad">The acting account does not own this name.</p> : null}
-          {error ? <p className="notice notice-bad">{error}</p> : null}
           <button
             type="submit"
             className="button button-primary"

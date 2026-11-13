@@ -1,5 +1,7 @@
 "use client";
 
+import { useAlert } from "@/components/ui/alert-modal";
+import { DECLINED } from "@/lib/atto/types";
 import {
   createContext,
   useCallback,
@@ -127,6 +129,7 @@ export function useLoad<T>(load: () => Promise<T>, deps: unknown[], pollMs?: num
 /** Runs one user action, keeps its error, and reloads the page's data afterwards. */
 export function useAction() {
   const { refresh } = usePersona();
+  const { alert } = useAlert();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -139,13 +142,15 @@ export function useAction() {
         refresh();
         return result;
       } catch (e) {
-        setError(e instanceof Error ? e.message : "The request failed.");
+        const message = e instanceof Error ? e.message : "The request failed.";
+        setError(message);
+        if (message !== DECLINED) void alert({ tone: "bad", title: "That didn't go through", body: message });
         return undefined;
       } finally {
         setBusy(false);
       }
     },
-    [refresh],
+    [refresh, alert],
   );
 
   return { run, busy, error };

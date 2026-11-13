@@ -6,11 +6,13 @@ import { useLoad, usePersona } from "@/components/providers";
 import { KEEPER_EXAMPLE, KEEPER_NETWORK, NETWORK, WALLET } from "@/lib/atto/backend";
 import { atto } from "@/lib/atto/client";
 import { formatDate } from "@/lib/atto/format";
+import { useAlertOnce } from "@/components/ui/alert-modal";
 
 export function MyNamesView() {
   const { ownerAccount: account } = usePersona();
   const { data, error, loading } = useLoad(() => (atto.keeperNames ? atto.keeperNames() : atto.ownedBy()), []);
   const elsewhere = WALLET && KEEPER_NETWORK !== NETWORK;
+  useAlertOnce(error ? `load:${error}` : null, () => ({ tone: "bad", title: "Your names didn't load", body: error }));
 
   return (
     <Screen>
@@ -21,7 +23,7 @@ export function MyNamesView() {
           In your hands.
         </h1>
         {elsewhere ? (
-          <p className="notice">
+          <p className="soft">
             Keeper runs on NEAR {KEEPER_NETWORK} for now, so this page shows {KEEPER_NETWORK} names. Connect a{" "}
             {KEEPER_NETWORK} wallet from the wallet bar to manage yours.
           </p>
@@ -29,7 +31,6 @@ export function MyNamesView() {
         {account ? <p>Names owned by {account}.</p> : null}
       </div>
       {loading ? <p className="soft">Loading names…</p> : null}
-      {error ? <p className="notice notice-bad">{error}</p> : null}
       {data && data.length === 0 ? (
         <p>
           {WALLET

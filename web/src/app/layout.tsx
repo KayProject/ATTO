@@ -5,6 +5,7 @@ import "@fontsource-variable/outfit";
 import "@fontsource/jetbrains-mono/400.css";
 import "./globals.css";
 import { PersonaProvider } from "@/components/providers";
+import { AlertProvider } from "@/components/ui/alert-modal";
 import { ConsentBanner, MockBar, SiteFooter, SiteHeader } from "@/components/shell";
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
       <body>
+        <AlertProvider>
         <PersonaProvider>
           <Suspense>
             <MockBar />
@@ -27,6 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </Suspense>
           <ConsentBanner />
         </PersonaProvider>
+        </AlertProvider>
       </body>
     </html>
   );

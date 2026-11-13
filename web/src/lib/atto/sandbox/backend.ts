@@ -392,4 +392,61 @@ export const sandbox = {
     const ctx = load();
     await send(ctx, ctx.runtime.bot, ctx.runtime.escrow, "reverse", { listing_id: id });
   },
+
+  /** The escrow, registry and persona accounts, for the page's wallet approval window. */
+  async ids() {
+    const { runtime } = load();
+    return {
+      escrow: runtime.escrow,
+      registry: runtime.registry,
+      accounts: { seller: runtime.seller, buyer: runtime.buyer, owner: runtime.seller },
+    };
+  },
+
+  /** Replays the withdrawal the seller signed before the sale and reports whether Intents refused it. */
+  async tryOldKey(id: string): Promise<OldKeyResult> {
+    const ctx = load();
+    const l = (await listing(ctx, id)) ?? refuse("No such sale.");
+    if (l!.state !== "Completed") refuse("Finish the sale before trying the old key.");
+    const fixture = JSON.parse(
+      readFileSync(/* turbopackIgnore: true */ resolve(dirname(ctx.path), "fixture.json"), "utf8"),
+    ) as { signedWithdrawal?: unknown; intentsTokens: { tokenId: string }[] };
+    if (!fixture.signedWithdrawal) refuse("This sandbox has no withdrawal signed before the sale.");
+    const balances = () =>
+      Promise.all(
+        fixture.intentsTokens.map((t) =>
+          ctx.rpc.view<string>(ctx.runtime.intents, "mt_balance_of", { account_id: ctx.runtime.name, token_id: t.tokenId }),
+        ),
+      );
+    const before = await balances();
+    const bot = ctx.credentials.bot;
+    const account = new Account(bot.accountId, ctx.runtime.rpcUrl, bot.secretKey);
+    const attempt = (await account.signAndSendTransaction({
+      receiverId: ctx.runtime.intents,
+      actions: [actions.functionCall("execute_intents", { signed: [fixture.signedWithdrawal] }, GAS, 0n)],
+      waitUntil: "FINAL",
+      throwOnFailure: false,
+    })) as unknown as {
+      transaction: { hash: string };
+      receipts_outcome: { outcome: { status: unknown } }[];
+    };
+    const failed = attempt.receipts_outcome.find(
+      (r) => r.outcome.status && typeof r.outcome.status === "object" && "Failure" in r.outcome.status,
+    );
+    const after = await balances();
+    const reason = failed ? JSON.stringify(failed.outcome.status) : null;
+    return {
+      refused: !!failed,
+      reason: reason?.match(/"(?:ExecutionError|message)":"([^"]+)"/)?.[1] ?? reason,
+      balance_kept: before.every((b, i) => b === after[i]),
+      tx_hash: attempt.transaction.hash,
+    };
+  },
 };
+
+export interface OldKeyResult {
+  refused: boolean;
+  reason: string | null;
+  balance_kept: boolean;
+  tx_hash: string;
+}

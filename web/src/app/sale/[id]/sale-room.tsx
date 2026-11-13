@@ -6,8 +6,10 @@ import { reportAcceptanceKey, hasAcceptedReport } from "@/components/sale/report
 import { use, useState } from "react";
 import { TERMINAL_STATES, type Report } from "@atto/shared";
 import { useAction, useLoad, usePersona } from "@/components/providers";
+import { useAlert, useAlertOnce } from "@/components/ui/alert-modal";
 import { Plat, platLinks, platUnread, ReportProvenance, ReportSections, Tally } from "@/components/report";
-import { atto } from "@/lib/atto/client";
+import { atto, tryOldKey } from "@/lib/atto/client";
+import { BACKEND } from "@/lib/atto/backend";
 import { formatNear, formatNsDateTime } from "@/lib/atto/format";
 import { SaleProgress } from "@/components/sale/sale-progress";
 
@@ -30,12 +32,40 @@ export function SaleRoom({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { account } = usePersona();
   const { data: sale, error: loadError, loading } = useLoad(() => atto.getSale(id), [id], 1000);
-  const { run, busy, error } = useAction();
+  const { run, busy } = useAction();
+  const { alert } = useAlert();
   const [acceptedReport, setAcceptedReport] = useState<string | null>(null);
-  const [handoverNote, setHandoverNote] = useState<string | null>(null);
+  const state = sale?.listing.state;
+  const salePrice = sale ? `${formatNear(sale.listing.price)} NEAR` : "";
+  const seller = sale?.listing.seller === account;
+  useAlertOnce(loadError ? `load:${loadError}` : null, () => ({ tone: "bad", title: "This sale didn't load", body: loadError }));
+  useAlertOnce(state === "Paid" ? `paid:${id}:${account}` : null, () =>
+    seller
+      ? { tone: "escrow", title: "The buyer has paid", body: `${salePrice} is held in escrow. Hand over the name to continue.` }
+      : { tone: "escrow", title: "Payment held in escrow", body: `Your ${salePrice} stays in escrow until the sale completes. You can cancel for a full refund until the seller hands over the name.` },
+  );
+  useAlertOnce(state === "Completed" ? `done:${id}` : null, () => ({
+    tone: "done",
+    title: "Sale completed",
+    body: `${sale!.listing.buyer} owns ${sale!.listing.token_id}. ${sale!.listing.seller} received ${salePrice}.`,
+    actions: [
+      { label: "See history", href: `/names/${sale!.listing.token_id}/history` },
+      { label: "Done", primary: true },
+    ],
+  }));
+  useAlertOnce(state === "Reversed" ? `reversed:${id}` : null, () => ({
+    tone: "bad",
+    title: "Sale reversed",
+    body: `What blocked it: ${sale!.listing.failure}. The name is back with ${sale!.listing.seller}, and the buyer has their ${salePrice} back.`,
+  }));
+  useAlertOnce(sale?.listing.failure && state !== "Reversed" ? `failed:${id}` : null, () => ({
+    tone: "bad",
+    title: "A check failed",
+    body: sale!.listing.failure,
+  }));
 
   if (loading) return <p className="frame soft">Loading the sale…</p>;
-  if (loadError) return <p className="frame notice notice-bad">{loadError}</p>;
+  if (loadError) return <p className="frame soft">This sale couldn&apos;t load.</p>;
   if (!sale) {
     return (
       <div className="frame stack">
@@ -75,8 +105,6 @@ export function SaleRoom({ params }: { params: Promise<{ id: string }> }) {
 
       <section className="report-head">
         <SaleActions state={listing.state}>
-          {error ? <p className="notice notice-bad">{error}</p> : null}
-          {handoverNote ? <p className="notice notice-bad">{handoverNote}</p> : null}
 
           {listing.state === "Listed" && isSeller ? (
             <>
@@ -131,7 +159,8 @@ export function SaleRoom({ params }: { params: Promise<{ id: string }> }) {
                     onClick={() =>
                       void run(async () => {
                         const result = await atto.handOver(id);
-                        setHandoverNote(result.accepted ? null : (result.reason ?? "The name went back to you."));
+                        if (!result.accepted)
+                          void alert({ tone: "bad", title: "The name came back", body: result.reason ?? "The name went back to you." });
                       })
                     }
                   >
@@ -234,7 +263,7 @@ export function SaleRoom({ params }: { params: Promise<{ id: string }> }) {
           {working && listing.failure !== null ? (
             <>
               <h2>A check failed</h2>
-              <p className="notice notice-bad">{listing.failure}</p>
+              <p>{listing.failure}</p>
             </>
           ) : null}
 
@@ -247,7 +276,7 @@ export function SaleRoom({ params }: { params: Promise<{ id: string }> }) {
           {listing.state === "Completed" ? (
             <>
               <h2>Sale completed</h2>
-              <p className="notice notice-done">
+              <p>
                 {listing.buyer} owns {listing.token_id}. {listing.seller} received {price}.
               </p>
               <div className="row">
@@ -258,13 +287,44 @@ export function SaleRoom({ params }: { params: Promise<{ id: string }> }) {
                   See history
                 </Link>
               </div>
+              {BACKEND === "sandbox" ? (
+                <div className="stack old-key">
+                  <h2>The seller&apos;s old key</h2>
+                  <p>
+                    Before the sale, {listing.seller} signed a withdrawal from {listing.token_id}&apos;s NEAR Intents
+                    balance with their own key. Send it now.
+                  </p>
+                  <button
+                    type="button"
+                    className="button button-primary"
+                    disabled={busy}
+                    onClick={() =>
+                      void run(async () => {
+                        const r = await tryOldKey(id);
+                        await alert(
+                          r.refused
+                            ? {
+                                tone: "key",
+                                title: "Old key rejected",
+                                body: `NEAR Intents rejected the withdrawal: the key is no longer authorized.${r.balance_kept ? ` ${listing.token_id}'s balance is unchanged.` : ""}`,
+                              }
+                            : { tone: "bad", title: "The old key still works", body: "NEAR Intents accepted the withdrawal." },
+                        );
+                      })
+                    }
+                  >
+                    {busy ? "Sending the old withdrawal…" : "Try the old key"}
+                  </button>
+
+                </div>
+              ) : null}
             </>
           ) : null}
 
           {listing.state === "Reversed" ? (
             <>
               <h2>Sale reversed</h2>
-              <p className="notice notice-bad">
+              <p>
                 What blocked it: {listing.failure}. The name is back with {listing.seller}, and {listing.buyer} has
                 their {price} back.
               </p>

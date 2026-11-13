@@ -1,4 +1,5 @@
 "use client";
+import { useAlertOnce } from "@/components/ui/alert-modal";
 
 import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -29,8 +30,9 @@ export function SalesView() {
     return { open, mine, owned };
   }, []);
 
+  useAlertOnce(error ? `load:${error}` : null, () => ({ tone: "bad", title: "Sales didn't load", body: error }));
   if (loading) return <p className="frame soft">Loading sales…</p>;
-  if (error || !data) return <p className="frame notice notice-bad">{error}</p>;
+  if (error || !data) return <p className="frame soft">Sales couldn&apos;t load.</p>;
 
   const toList = data.owned.filter((o) => !o.listing_id);
 

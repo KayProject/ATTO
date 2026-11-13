@@ -10,6 +10,7 @@ import { KEEPER_NETWORK, NETWORK } from "@/lib/atto/backend";
 import { atto } from "@/lib/atto/client";
 import { formatDate, formatNear, parseNear } from "@/lib/atto/format";
 import { NOT_OWNER } from "@/lib/atto/types";
+import { useAlertOnce } from "@/components/ui/alert-modal";
 import { OwnerGate } from "./owner-gate";
 
 function AmountForm({
@@ -63,7 +64,15 @@ function AmountForm({
 export function OwnerPageView({ params }: { params: Promise<{ name: string }> }) {
   const name = decodeURIComponent(use(params).name);
   const { data: view, error: loadError, loading } = useLoad(() => atto.getOwnerView(name), [name]);
-  const { run, busy, error } = useAction();
+  const failed = loadError && loadError !== NOT_OWNER ? loadError : null;
+  useAlertOnce(failed ? `load:${failed}` : null, () => ({ tone: "bad", title: `The owner page for ${name} can't open`, body: failed }));
+  const short = view ? BigInt(view.shortfall) > 0n : false;
+  useAlertOnce(short && view?.can_manage !== false ? `short:${name}` : null, () => ({
+    tone: "warn",
+    title: "The reserve is short",
+    body: `It's ${formatNear(view!.shortfall)} NEAR short of the next renewal, needed by ${formatDate(view!.lease_end)}. Top it up or the name could be lost.`,
+  }));
+  const { run, busy } = useAction();
   const [shareDraft, setShare] = useState<string | null>(null);
   const share = shareDraft ?? String((view?.reserve.share_bps ?? 0) / 100);
 
@@ -73,7 +82,6 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
     return (
       <div className="frame stack">
         <h1>The owner page for {name} can&apos;t open</h1>
-        <p className="notice notice-bad">{loadError ?? "ATTO returned nothing for this name."}</p>
         <p>
           Anyone can still read its <Link href={`/names/${name}`}>public report</Link>.
         </p>
@@ -85,7 +93,6 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
   if (view.can_manage === false) return <OwnerGate name={name} />;
   const elsewhere = KEEPER_NETWORK !== NETWORK;
   const idle = busy;
-  const short = BigInt(view.shortfall) > 0n;
   const filled = Math.min(100, Number((BigInt(reserve.balance) * 100n) / BigInt(view.renewal_cost)));
   const shareBps = Math.round(Number(share) * 100);
   const shareValid = share.trim() !== "" && Number.isFinite(shareBps) && shareBps >= 0 && shareBps <= 10_000;
@@ -128,7 +135,6 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
         </div>
         <SceneArt scene="renewal" />
       </div>
-      {error ? <p className="notice notice-bad">{error}</p> : null}
 
       <section className="stack">
         <h2>Rent reserve</h2>
@@ -142,7 +148,7 @@ export function OwnerPageView({ params }: { params: Promise<{ name: string }> })
           <span style={{ width: `${filled}%` }} />
         </div>
         {short ? (
-          <p className="notice notice-bad">
+          <p>
             The reserve is {formatNear(view.shortfall)} NEAR short of the next renewal, which is needed by{" "}
             {formatDate(view.lease_end)}. Top it up or the name could be lost.
           </p>

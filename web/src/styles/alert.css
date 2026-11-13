@@ -1,0 +1,256 @@
+/* Alert modal: frosted ring, coral band with a glass asset over cloud shapes, cream body. */
+.alert-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgb(20 16 14 / 0.42);
+  backdrop-filter: blur(6px);
+}
+.alert-modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 81;
+  width: min(calc(100vw - 32px), 26rem);
+  translate: -50% -50%;
+  padding: 14px;
+  border-radius: 40px;
+  background: rgb(255 253 249 / 0.45);
+  box-shadow:
+    0 40px 90px rgb(20 16 14 / 0.28),
+    inset 0 0 0 1px rgb(255 255 255 / 0.6);
+  backdrop-filter: blur(14px);
+  outline: none;
+}
+.alert-modal:focus,
+.alert-modal:focus-visible,
+.wallet-modal:focus,
+.wallet-modal:focus-visible {
+  outline: none;
+}
+.alert-card {
+  overflow: hidden;
+  border-radius: 28px;
+  background: var(--surface);
+}
+.alert-band {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+  background: linear-gradient(var(--highlight, #f95c4b) 93%, var(--surface) 93%);
+}
+.alert-bad .alert-band { background: linear-gradient(#1f1a17 93%, var(--surface) 93%); }
+.alert-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 18px solid rgb(255 255 255 / 0.12);
+}
+.alert-ring-a { width: 120px; height: 120px; left: -44px; top: -44px; }
+.alert-ring-b { width: 120px; height: 120px; right: -44px; top: -44px; }
+.alert-spark {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.85;
+}
+.alert-spark-a { left: 22%; top: 26%; }
+.alert-spark-b { right: 20%; top: 36%; width: 6px; height: 6px; }
+.alert-spark-c { left: 34%; top: 54%; width: 4px; height: 4px; }
+.alert-art {
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  width: 128px;
+  height: 128px;
+  object-fit: contain;
+  translate: -50% 0;
+  filter: drop-shadow(0 18px 24px rgb(0 0 0 / 0.25));
+}
+.alert-clouds {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: -6px;
+  height: 84px;
+  background:
+    radial-gradient(60px 50px at 8% 70%, var(--surface) 98%, transparent 100%),
+    radial-gradient(70px 56px at 24% 92%, var(--surface) 98%, transparent 100%),
+    radial-gradient(58px 46px at 40% 96%, var(--surface) 98%, transparent 100%),
+    radial-gradient(66px 52px at 60% 96%, var(--surface) 98%, transparent 100%),
+    radial-gradient(70px 58px at 78% 88%, var(--surface) 98%, transparent 100%),
+    radial-gradient(64px 54px at 94% 66%, var(--surface) 98%, transparent 100%),
+    linear-gradient(transparent 70%, var(--surface) 70%);
+}
+.alert-clouds::before {
+  content: "";
+  position: absolute;
+  inset: -16px 0 auto;
+  height: 60px;
+  background:
+    radial-gradient(54px 40px at 14% 90%, rgb(255 255 255 / 0.32) 98%, transparent 100%),
+    radial-gradient(60px 44px at 86% 86%, rgb(255 255 255 / 0.32) 98%, transparent 100%);
+}
+.alert-body {
+  position: relative;
+  margin-top: -1px;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-6) var(--space-6);
+  text-align: center;
+}
+.alert-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--foreground);
+}
+.alert-text {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 22rem;
+  overflow-wrap: anywhere;
+}
+.alert-text a { color: var(--foreground); text-decoration: underline; }
+.alert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* Wallet approval: review and send. */
+.wallet-overlay { z-index: 90; }
+.wallet-modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 91;
+  display: flex;
+  flex-direction: column;
+  width: min(calc(100vw - 32px), 25rem);
+  min-height: min(calc(100vh - 48px), 44rem);
+  translate: -50% -50%;
+  overflow: hidden;
+  border-radius: 28px;
+  background: #16171a;
+  color: #ece7e4;
+  box-shadow: 0 40px 90px rgb(0 0 0 / 0.5);
+  font-family: "Inter", var(--font-body);
+  outline: none;
+}
+.wallet-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 14px;
+  background: #1e1f22;
+  border-bottom: 1px solid #2c2d31;
+}
+.wallet-back {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  color: #ece7e4;
+}
+.wallet-chain { font-size: 0.6rem; letter-spacing: 0.06em; color: #55565b; }
+.wallet-title { margin: 22px 0 18px; text-align: center; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
+.wallet-pair { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; padding: 0 16px; }
+.wallet-tile {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
+  min-height: 124px;
+  padding: 14px 8px;
+  border: 1px solid #303136;
+  border-radius: 20px;
+  background: #1e1f22;
+  text-align: center;
+}
+.wallet-tile strong { font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
+.wallet-tile small { font-size: 0.9rem; color: #9b9a9a; }
+.wallet-token { position: relative; display: block; width: 56px; height: 56px; }
+.wallet-token-badge { position: absolute; left: -6px; bottom: -4px; display: grid; border-radius: 50%; box-shadow: 0 0 0 2px #1e1f22; }
+.wallet-nft { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #f95c4b; }
+.wallet-nft img { width: 44px; height: 44px; object-fit: contain; }
+.wallet-avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #3a3b40;
+  border-radius: 50%;
+  font-weight: 600;
+}
+.wallet-join {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  translate: -50% -50%;
+  border: 1px solid #303136;
+  border-radius: 10px;
+  background: #1e1f22;
+  color: #ece7e4;
+}
+.wallet-details {
+  margin: 16px 16px 0;
+  border: 1px solid #303136;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.wallet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px;
+}
+.wallet-row + .wallet-row { border-top: 1px solid #303136; }
+.wallet-row-stack { flex-direction: column; align-items: stretch; gap: 8px; }
+.wallet-label { display: flex; align-items: center; gap: 10px; color: #9b9a9a; font-size: 1.05rem; }
+.wallet-value { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 1.05rem; overflow-wrap: anywhere; }
+.wallet-fee { display: flex; align-items: center; gap: 10px; text-align: right; }
+.wallet-fee b { display: block; font-weight: 500; font-size: 1.05rem; }
+.wallet-fee small { display: block; color: #9b9a9a; font-size: 0.9rem; }
+.wallet-send {
+  margin: auto 16px 16px;
+  min-height: 56px;
+  border-radius: 999px;
+  background: #ebdedd;
+  color: #16171a;
+  font-size: 1.05rem;
+  font-weight: 600;
+  transition: background var(--quick, 160ms), transform var(--quick, 160ms);
+}
+.wallet-send:hover { background: #f4e9e8; }
+.wallet-send:active { transform: scale(0.98); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .alert-overlay, .wallet-overlay { animation: alert-fade 220ms var(--ease) both; }
+  .alert-modal, .wallet-modal { animation: alert-rise 360ms var(--ease) both; }
+  .alert-art { animation: alert-pop 520ms 120ms var(--ease) both, alert-float 3.6s 640ms ease-in-out infinite; }
+  .alert-spark { animation: alert-twinkle 2.8s ease-in-out infinite; }
+  .alert-spark-b { animation-delay: 0.9s; }
+  .alert-spark-c { animation-delay: 1.7s; }
+  .alert-ring { animation: alert-drift 7s ease-in-out infinite alternate; }
+}
+@keyframes alert-fade { from { opacity: 0; } }
+@keyframes alert-rise { from { opacity: 0; transform: translateY(18px) scale(0.96); } }
+@keyframes alert-pop { from { opacity: 0; transform: translateY(26px) scale(0.86); } }
+@keyframes alert-float { 50% { transform: translateY(-7px) rotate(-2deg); } }
+@keyframes alert-twinkle { 50% { opacity: 0.25; } }
+@keyframes alert-drift { to { transform: translate(8px, 6px); } }
+.alert-list { display: grid; gap: var(--space-2); text-align: left; padding-left: 1.1rem; list-style: disc; }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { use } from "react";
 import { useLoad } from "@/components/providers";
+import { useAlertOnce } from "@/components/ui/alert-modal";
 import { Stamp } from "@/components/report";
 import { atto } from "@/lib/atto/client";
 import { KIND_LABEL } from "@/lib/atto/check";
@@ -86,6 +87,7 @@ function Event({ event }: { event: HistoryEvent }) {
 export function HistoryView({ params }: { params: Promise<{ name: string }> }) {
   const name = decodeURIComponent(use(params).name);
   const { data, error, loading } = useLoad(() => atto.getHistory(name), [name]);
+  useAlertOnce(error ? `load:${error}` : null, () => ({ tone: "bad", title: "History didn't load", body: error }));
 
   return (
     <div className="frame stack-lg">
@@ -96,7 +98,6 @@ export function HistoryView({ params }: { params: Promise<{ name: string }> }) {
         </p>
       </div>
       {loading ? <p className="soft">Loading history…</p> : null}
-      {error ? <p className="notice notice-bad">{error}</p> : null}
       {data && data.length === 0 ? <p>There&apos;s no recorded history for this name.</p> : null}
       {data && data.length > 0 ? (
         <ol className="timeline">

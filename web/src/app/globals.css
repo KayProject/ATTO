@@ -9,6 +9,7 @@
 @import "../styles/cast.css";
 @import "../styles/scenes/home.css";
 @import "../styles/chrome.css";
+@import "../styles/alert.css";
 @theme inline {
   --color-background: var(--canvas);
   --color-foreground: var(--foreground);
