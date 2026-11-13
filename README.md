@@ -11,6 +11,33 @@ ATTO finds those leftovers and removes them before anyone gets paid:
 - Keeper renews a name from a reserve that belongs to the name, so a forgotten renewal doesn't lose it.
 - Check API answers one question for any app about to pay a name: has it changed owner in the last N days?
 
+## Try it
+
+### On the live site
+
+https://atto.namite.xyz reads NEAR mainnet. No wallet is needed for these steps.
+
+1. Open [/search](https://atto.namite.xyz/search) and enter `near.pay`. You see the name's report: owner and payout, lease, wallet balances, Intents balances and keys, NFT approvals, DAO roles and sub-accounts, each line rated Clean, Will be cleared or Needs the seller. A modal notes that live reports are read-only.
+2. Open [/pay](https://atto.namite.xyz/pay), enter `near.pay` and press Check this name. A modal answers whether the name changed owner in the last seven days.
+3. Request `https://atto.namite.xyz/api/v1/names/near.pay/changed?days=30`. The answer is JSON: `{"changed":false}`, or `true` with the date, the kind of change and the previous owner. `/api/v1/names/near.pay/history` returns the name's ownership events.
+4. Open [/owner/attotestowner.attotest.testnet](https://atto.namite.xyz/owner/attotestowner.attotest.testnet). Without the wallet that owns that testnet name you get the Owners only page. Connecting the owning testnet wallet opens its Keeper reserve, share and renewal controls.
+
+### A full Clean Sale on the real contracts
+
+This runs the House of Stake registry and the NEAR Intents contract on a local sandbox chain, with a name that still carries a seller-held Intents key, an NFT approval and a sub-account.
+
+1. Run `tests/setup.sh`, then `cd tests && cargo test --test deploy_sandbox -- --ignored --nocapture` and leave it running.
+2. From the repository root, run `NEXT_PUBLIC_ATTO_BACKEND=sandbox pnpm --filter web dev` and open http://localhost:3000/sale/new/bakery.tla.test.near. Demo controls, at the bottom left, set the acting account; start as Seller.
+3. Enter a price of 5 and press List this name. A Review & Send window shows the 0.05 NEAR listing deposit going to the escrow. Press Transfer. You land on the sale page.
+4. Switch to Buyer, tick the report box and press Pay 5 NEAR into escrow, then Transfer. A modal confirms the payment is held in escrow.
+5. Switch to Seller and press Hand over, then Transfer. The escrow removes the Intents key and the NFT approval, checks on chain that both are gone, and completes the sale: the buyer gets the name and the seller gets 5 NEAR in the same transaction.
+6. Press Try the old key. The withdrawal the seller signed before the sale is sent to NEAR Intents and refused, and a modal shows the name's Intents balance is unchanged.
+7. Press See history. The sale is listed with the key that was removed and the approval that was revoked.
+
+### The tests
+
+After `tests/setup.sh`, `cd tests && cargo test` runs the sandbox tests in Proof, and `pnpm -r test` runs the TypeScript tests.
+
 ## Proof
 
 The contracts run against the real registry, wallet and Intents code, deployed to a local NEAR sandbox.
@@ -125,3 +152,19 @@ Keep keys and runtime files out of git. Everything under `workbench/` is ignored
 Title Search reads finalized chain state at the moment it runs. ATTO removes Intents keys and NFT approvals, because the escrow can do that as the name's owner. Sub-accounts and DAO roles live in their own contracts, so the report lists them and tells the buyer exactly what to ask the seller for. The escrow pays in NEAR only and charges no fee.
 
 The website serves its own fonts and runs no analytics. Terms, privacy and cookie policies ship with it and are linked in the footer.
+
+## Built with
+
+- The Top Level Accounts registry and extension from [houseofstake/tla-contracts](https://github.com/houseofstake/tla-contracts), built from source by `tests/setup.sh`.
+- [NEAR Intents](https://github.com/near/intents): the sandbox runs the code deployed at `intents.near`, and the contracts use the `defuse-core` and `defuse-wallet` crates.
+- `near-sdk` 5.29, `near-workspaces` 0.22 and `near-sandbox` for the contracts and tests.
+- `near-api-js` for chain reads and transactions, `@hot-labs/near-connect` for wallet connection, and the FastNEAR RPC and API.
+- Next.js, React, Radix UI, GSAP, Three.js with React Three Fiber, Tailwind CSS, zod, `@noble/hashes`, `@noble/curves` and Phosphor icons on the website. Fonts are DM Sans, Outfit, Inter and JetBrains Mono, served from Fontsource packages.
+
+## NEAR HACKATHON
+
+Built by Team ATTO for NEAR HACKATHON, November 2026, in the NFTs That Do Something (`nfts`) and AI Security & Defense (`security`) tracks. All code in this repository was written during the hackathon; the first commit is from 5 November 2026.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
