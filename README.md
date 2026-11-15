@@ -169,6 +169,8 @@ The website serves its own fonts and runs no analytics. Terms, privacy and cooki
 
 Built by Team ATTO for NEAR HACKATHON, November 2026, in the NFTs That Do Something (`nfts`) and AI Security & Defense (`security`) tracks. All code in this repository was written during the hackathon; the first commit is from 5 November 2026.
 
+Separate Independent Build "NUTUS" ([github.com/Sam-Rytech/nutus](https://github.com/Sam-Rytech/nutus), [nutus.vercel.app](https://nutus.vercel.app))
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
